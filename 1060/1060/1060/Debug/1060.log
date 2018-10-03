@@ -1,0 +1,3 @@
+﻿  1060.cpp
+c:\users\i\source\repos\acm\1060\1060\1060\1060.cpp(17): warning C4554: '>>': check operator precedence for possible error; use parentheses to clarify precedence
+  1060.vcxproj -> C:\Users\i\source\repos\acm\1060\1060\Debug\1060.exe
