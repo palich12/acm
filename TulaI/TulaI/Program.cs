@@ -4,17 +4,35 @@ using System.Collections.Generic;
 
 namespace TulaI
 {
+
+    public class Entity : IComparable
+    {
+        public List<int> path;
+        public int w;
+
+        public int CompareTo(object obj)
+        {
+            return w.CompareTo(((Entity)obj).w);
+        }
+    }
+
+    public class ReqResult
+    {
+        public int Result;
+        public bool Uncash;
+    }
     class Program
     {
         public static int[,] Matrix;
         public static int N;
-        public static Dictionary<string, int> cash;
+        public static Dictionary<string, int> cash = new Dictionary<string, int>();
+        public static int BestScore = Int32.MaxValue;
+        public static int Counter = 0;
 
         static void Main(string[] args)
         {
             N = Int32.Parse(Console.ReadLine());
             Matrix = new int[N,N];
-            cash = new Dictionary<string, int>();
 
             for(int i = 0; i < N; i++)
             {
@@ -25,27 +43,52 @@ namespace TulaI
                 }
             }
 
-            Console.WriteLine(req(new List<int>()));
+            req(new List<int>(), 0);
+            Console.WriteLine(BestScore);
             //Console.ReadLine();
             
 
         }
 
-        static int req( List<int> path )
+        static ReqResult req( List<int> path, int curscore )
         {
-
-            var hash = GetHash(path);
-            if ( cash.ContainsKey(hash) )
+            bool uncash = false;
+            Counter++;
+            if (Counter > 200000)
             {
-                return cash[hash];
+                return new ReqResult()
+                {
+                    Result = Int32.MaxValue,
+                    Uncash = true
+                };
             }
+
             if(N - path.Count <= 3)
             {
-                cash.Add(hash, 0);
-                return 0;
+                if(BestScore > curscore)
+                {
+                    BestScore = curscore;
+                }
+                cash.Add(GetHash(path), 0);
+                return new ReqResult()
+                {
+                    Result = 0,
+                    Uncash = false
+                };
             }
 
-            var res = Int32.MaxValue;
+            var pathhash = GetHash(path);
+            if ( cash.ContainsKey(pathhash)) 
+            {
+                return new ReqResult()
+                {
+                    Result = cash[pathhash],
+                    Uncash = false
+                };
+            }
+
+            
+            var entities = new List<Entity>();
             for (int i = 0; i < N; i++)
             {
                 if (!path.Contains(i))
@@ -62,34 +105,48 @@ namespace TulaI
                             }
                             else
                             {
-                                if (Matrix[i, j] >= res)
-                                {
-                                    break;
-                                }
-                                var newpath = new List<int>(path);
 
-                                int k = 0;
-                                foreach (var p in newpath)
+                                var newpath = new List<int>(path);
+                                newpath.Add(index);
+                                newpath.Sort();
+                                if (curscore + Matrix[i, j] < BestScore)
                                 {
-                                    if (p >= index)
-                                    {
-                                        break;
-                                    }
-                                    k++;
+                                    entities.Add(new Entity() {
+                                        path = newpath,
+                                        w = Matrix[i, j],
+                                    });
                                 }
-                                newpath.Insert(k, index);
-                                res = Math.Min(res, req(newpath) + Matrix[i, j]);
+                                else
+                                {
+                                    uncash = true;
+                                }
                                 break;
                             }
                         }
                         
                     }
-                }
-                
+                }              
             }
 
-            cash.Add(hash, res);
-            return res;
+            entities.Sort();
+            var res = Int32.MaxValue;
+            foreach(var e in entities)
+            {
+                var r = req(e.path, curscore + e.w);
+                res = Math.Min(res, r.Result);
+                uncash = uncash || r.Uncash;
+            }
+
+            if (!uncash)
+            {
+                cash.Add(pathhash, res);
+            }
+
+            return new ReqResult()
+            {
+                Result = res,
+                Uncash = uncash
+            };
         }
 
         public static string GetHash(List<int> path)

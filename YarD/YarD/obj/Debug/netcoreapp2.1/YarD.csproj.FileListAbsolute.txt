@@ -1,0 +1,10 @@
+C:\Users\Eugene\source\repos\acm\YarD\YarD\bin\Debug\netcoreapp2.1\YarD.deps.json
+C:\Users\Eugene\source\repos\acm\YarD\YarD\bin\Debug\netcoreapp2.1\YarD.runtimeconfig.json
+C:\Users\Eugene\source\repos\acm\YarD\YarD\bin\Debug\netcoreapp2.1\YarD.runtimeconfig.dev.json
+C:\Users\Eugene\source\repos\acm\YarD\YarD\bin\Debug\netcoreapp2.1\YarD.dll
+C:\Users\Eugene\source\repos\acm\YarD\YarD\bin\Debug\netcoreapp2.1\YarD.pdb
+C:\Users\Eugene\source\repos\acm\YarD\YarD\obj\Debug\netcoreapp2.1\YarD.csproj.CoreCompileInputs.cache
+C:\Users\Eugene\source\repos\acm\YarD\YarD\obj\Debug\netcoreapp2.1\YarD.AssemblyInfoInputs.cache
+C:\Users\Eugene\source\repos\acm\YarD\YarD\obj\Debug\netcoreapp2.1\YarD.AssemblyInfo.cs
+C:\Users\Eugene\source\repos\acm\YarD\YarD\obj\Debug\netcoreapp2.1\YarD.dll
+C:\Users\Eugene\source\repos\acm\YarD\YarD\obj\Debug\netcoreapp2.1\YarD.pdb
