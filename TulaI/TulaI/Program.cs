@@ -44,6 +44,7 @@ namespace TulaI
             }
 
             req(new List<int>(), 0);
+            
             Console.WriteLine(BestScore);
             //Console.ReadLine();
             
@@ -52,9 +53,9 @@ namespace TulaI
 
         static ReqResult req( List<int> path, int curscore )
         {
-            bool uncash = false;
+            
             Counter++;
-            if (Counter > 200000)
+            if (Counter > 180000)
             {
                 return new ReqResult()
                 {
@@ -80,6 +81,10 @@ namespace TulaI
             var pathhash = GetHash(path);
             if ( cash.ContainsKey(pathhash)) 
             {
+                if (BestScore > curscore + cash[pathhash])
+                {
+                    BestScore = curscore + cash[pathhash];
+                }
                 return new ReqResult()
                 {
                     Result = cash[pathhash],
@@ -89,8 +94,12 @@ namespace TulaI
 
             
             var entities = new List<Entity>();
+            bool uncash = false;
+
+            var res = Int32.MaxValue;
             for (int i = 0; i < N; i++)
             {
+
                 if (!path.Contains(i))
                 {
                     int index = -1;
@@ -104,17 +113,22 @@ namespace TulaI
                                 index = j;
                             }
                             else
-                            {
-
-                                var newpath = new List<int>(path);
-                                newpath.Add(index);
-                                newpath.Sort();
+                            {                          
                                 if (curscore + Matrix[i, j] < BestScore)
                                 {
-                                    entities.Add(new Entity() {
-                                        path = newpath,
-                                        w = Matrix[i, j],
-                                    });
+                                    var newpath = new List<int>(path)
+                                    {
+                                        index
+                                    };
+                                    newpath.Sort();
+                                    //entities.Add(new Entity() {
+                                    //    path = newpath,
+                                    //    w = Matrix[i, j],
+                                    //});
+
+                                    var r = req(newpath, curscore + Matrix[i, j]);
+                                    res = Math.Min(res, r.Result == int.MaxValue ? int.MaxValue : r.Result + Matrix[i, j]);
+                                    uncash = uncash || r.Uncash;
                                 }
                                 else
                                 {
@@ -127,15 +141,15 @@ namespace TulaI
                     }
                 }              
             }
-
-            entities.Sort();
-            var res = Int32.MaxValue;
-            foreach(var e in entities)
-            {
-                var r = req(e.path, curscore + e.w);
-                res = Math.Min(res, r.Result);
-                uncash = uncash || r.Uncash;
-            }
+            
+            ////entities.Sort();
+            //var res = Int32.MaxValue;
+            //foreach(var e in entities)
+            //{
+            //    var r = req(e.path, curscore + e.w);
+            //    res = Math.Min(res, r.Result == Int32.MaxValue ? Int32.MaxValue : r.Result+e.w);
+            //    uncash = uncash || r.Uncash;
+            //}
 
             if (!uncash)
             {
