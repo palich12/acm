@@ -516,10 +516,11 @@
       ]
     },
     "Microsoft.NETCore.Platforms/2.1.0": {
-      "sha512": "TT+QCi9LcxGTjBssH7S7n5+8DVcwfG4DYgXX7Dk7+BfZ4oVHj8Q0CbYk9glzAlHLsSt3bYzol+fOdra2iu6GOw==",
+      "sha512": "aSTPL94NloSiQVL5Len8wbjFKOnoAX/vOh3s3DF6g3c7GUUMLCDvnBhmA72M2iN2AedyA8hpr7m89kzSAKUnJQ==",
       "type": "package",
       "path": "microsoft.netcore.platforms/2.1.0",
       "files": [
+        ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
@@ -687,11 +688,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Eugene\\source\\repos\\acm\\TulaI\\TulaI\\TulaI.csproj",
+      "projectUniqueName": "C:\\Users\\Eugene\\Source\\Repos\\acm\\TulaI\\TulaI\\TulaI.csproj",
       "projectName": "TulaI",
-      "projectPath": "C:\\Users\\Eugene\\source\\repos\\acm\\TulaI\\TulaI\\TulaI.csproj",
+      "projectPath": "C:\\Users\\Eugene\\Source\\Repos\\acm\\TulaI\\TulaI\\TulaI.csproj",
       "packagesPath": "C:\\Users\\Eugene\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Eugene\\source\\repos\\acm\\TulaI\\TulaI\\obj\\",
+      "outputPath": "C:\\Users\\Eugene\\Source\\Repos\\acm\\TulaI\\TulaI\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
