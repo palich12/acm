@@ -44,16 +44,20 @@ namespace TulaI
             }
 
             //req(new List<int>());
-            
-            Console.WriteLine(req(new List<int>()));
-            //Console.ReadLine();
+            var path = new List<int>();
+            for(int i = 0; i < N; i++)
+            {
+                path.Add(i);
+            }
+            Console.WriteLine(req(path));
+            Console.ReadLine();
             
 
         }
 
         static int req( List<int> path )
         {
-            if (N - path.Count <= 3)
+            if (path.Count <= 3)
             {
                 return 0;
             }
@@ -65,37 +69,34 @@ namespace TulaI
             }
 
             var res = Int32.MaxValue;
-            for (int i = 0; i < N; i++)
+            
+            for (int i = 0; i < path.Count - 2; i++)
             {
 
-                if (!path.Contains(i))
+                for (int j = i+2; j < path.Count && !(i==0 && j == path.Count-1); j++)
                 {
-                    int index = -1;
-                    for (int j1 = i+1; j1 < N + 2; j1++)
+                    var newpath1 = new List<int>();
+                    var newpath2 = new List<int>();
+                    int k = 0;
+                    foreach(var vert in path)
                     {
-                        int j = j1 % N;
-                        if (!path.Contains(j))
+                        if(k <= i || k >= j)
                         {
-                            if (index == -1)
-                            {
-                                index = j;
-                            }
-                            else
-                            {
-                                var newpath = new List<int>(path)
-                                    {
-                                        index
-                                    };
-                                newpath.Sort();
-
-                                var r = req(newpath);
-                                res = Math.Min(res, r == int.MaxValue ? int.MaxValue : r + Matrix[i, j]);
-                                break;
-                            }
+                            newpath1.Add(vert);
                         }
-                        
+                        if( k >= i && k <= j)
+                        {
+                            newpath2.Add(vert);
+                        }
+
+                        k++;
                     }
-                }              
+
+                    var r1 = req(newpath1);
+                    var r2 = req(newpath2);
+                    res = Math.Min(res, r1 == int.MaxValue || r2 == int.MaxValue ? int.MaxValue : r1 + r2 + Matrix[path[i], path[j]]);
+
+                }            
             }
 
             cash[pathhash] = res;

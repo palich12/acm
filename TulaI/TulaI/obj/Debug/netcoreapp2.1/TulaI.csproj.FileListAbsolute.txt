@@ -19,3 +19,4 @@ C:\Users\i\Source\Repos\acm\TulaI\TulaI\obj\Debug\netcoreapp2.1\TulaI.AssemblyIn
 C:\Users\i\Source\Repos\acm\TulaI\TulaI\obj\Debug\netcoreapp2.1\TulaI.AssemblyInfo.cs
 C:\Users\i\Source\Repos\acm\TulaI\TulaI\obj\Debug\netcoreapp2.1\TulaI.dll
 C:\Users\i\Source\Repos\acm\TulaI\TulaI\obj\Debug\netcoreapp2.1\TulaI.pdb
+C:\Users\i\Source\Repos\acm\TulaI\TulaI\obj\Debug\netcoreapp2.1\TulaI.csprojAssemblyReference.cache
