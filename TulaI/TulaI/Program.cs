@@ -6,15 +6,19 @@ namespace TulaI
 {
     class Task : IComparable
     {
-        public static int Indexer = 0;
+        public static int IndexCounter = 0;
         public int Index;
         public int Value;
         public int[] Path;
+        public Int64 Hash;
 
-        public Task()
+        public Task(int value, int[] path)
         {
-            Index = Indexer;
-            Indexer++;
+            Path = path;
+            Value = value;
+            Hash = Program.GetHash(Path);
+            Index = IndexCounter;
+            IndexCounter++;
         }
 
         public int CompareTo(object obj)
@@ -37,29 +41,103 @@ namespace TulaI
         public static int BestScore = Int32.MaxValue;
         public static int Counter = 0;
 
-        static int Req( int[] path)
+        static int Req( int[] path, int len)
         {
+            if(Counter > 6500000)
+            {
+                return BestScore;
+            }
+            Counter++;
+
             if (path.Length <= 3)
             {
+                if(len < BestScore)
+                {
+                    BestScore = len;
+                }
                 return 0;
             }
 
             var pathhash = GetHash(path);
             if ( cash.ContainsKey(pathhash)) 
             {
-                return cash[pathhash];
-            }  
+                var cashv = cash[pathhash];
+                if (cashv + len < BestScore )
+                {
+                    BestScore = cashv + len;
+                }
+                return cashv;
+            }
+
             var res = Int32.MaxValue;
             for ( int i = 0; i < path.Length; i ++)
             {
                 var newpath = new int[path.Length - 1];
                 Array.Copy(path, 0, newpath, 0, i);
                 Array.Copy(path, i + 1, newpath, i, path.Length - i - 1);
-                var r = Req(newpath);
-                res = Math.Min(res, r == int.MaxValue ? int.MaxValue : r + Matrix[path[i == 0 ? path.Length - 1 : i - 1], path[i == path.Length - 1 ? 0 : i + 1]]);
+                var dlen = Matrix[path[i == 0 ? path.Length - 1 : i - 1], path[i == path.Length - 1 ? 0 : i + 1]];
+                var r = Req(newpath, len + dlen);
+                res = Math.Min(res, r == int.MaxValue ? int.MaxValue : r + dlen);
             }
             cash[pathhash] = res;
             return res;
+        }
+
+        public static int Deep()
+        {
+            var path = new int[N];
+            for (int i = 0; i < N; i++)
+            {
+                path[i] = i;
+            }
+
+            return Req(path, 0);
+        }
+
+        public static int Dijkstra()
+        {
+            var path = new int[N];
+            for (int i = 0; i < N; i++)
+            {
+                path[i] = i;
+            }
+
+            Pipe.Add(new Task(0, path));
+
+            while (Pipe.Count > 0)
+            {
+                Task task = (Task)Pipe.Min;
+                Pipe.Remove(task);
+
+                if (task.Path.Length <= 3)
+                {
+                    BestScore = task.Value;
+                    return task.Value;
+                }
+
+                if (cash.ContainsKey(task.Hash))
+                {
+                    continue;
+                }
+                cash[task.Hash] = task.Value;
+
+                for (int i = 0; i < task.Path.Length; i++)
+                {
+                    var newpath = new int[task.Path.Length - 1];
+                    Array.Copy(task.Path, 0, newpath, 0, i);
+                    Array.Copy(task.Path, i + 1, newpath, i, task.Path.Length - i - 1);
+                    var value = task.Value + Matrix[task.Path[i == 0 ? task.Path.Length - 1 : i - 1], task.Path[i == task.Path.Length - 1 ? 0 : i + 1]];
+                    var newtask = new Task(value, newpath);
+                    if (cash.ContainsKey(newtask.Hash))
+                    {
+                        continue;
+                    }
+                    Pipe.Add(newtask);
+                }
+
+            }
+
+            return BestScore;
         }
 
         public static Int64 GetHash(int[] path)
@@ -88,43 +166,7 @@ namespace TulaI
                 }
             }
 
-            //req(new List<int>());
-            var path = new int[N];
-            for(int i = 0; i < N; i++)
-            {
-                path[i] = i;
-            }
-
-            Pipe.Add( new Task
-            {
-                Path = path,
-                Value = 0
-            });
-
-            while(Pipe.Count > 0)
-            {
-                Task task = (Task)Pipe.Min;
-                Pipe.Remove(task);
-
-                if ( task.Path.Length <= 3)
-                {
-                    BestScore = task.Value;
-                    break;
-                }
-                for (int i = 0; i < task.Path.Length; i++)
-                {
-                    var newpath = new int[task.Path.Length - 1];
-                    Array.Copy(task.Path, 0, newpath, 0, i);
-                    Array.Copy(task.Path, i + 1, newpath, i, task.Path.Length - i - 1);
-                    var value = task.Value + Matrix[task.Path[i == 0 ? task.Path.Length - 1 : i - 1], task.Path[i == task.Path.Length - 1 ? 0 : i + 1]];
-                    Pipe.Add( new Task()
-                    {
-                        Value = value,
-                        Path = newpath
-                    });                                    
-                }
-
-            }
+            Deep();
 
             Console.WriteLine(BestScore);
             Console.ReadLine();
