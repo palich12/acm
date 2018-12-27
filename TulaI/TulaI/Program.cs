@@ -33,6 +33,12 @@ namespace TulaI
         }
     }
 
+    class ReqResult
+    {
+        public int Value = 0;
+        public bool AllowCash = true;
+    }
+
     class Program
     {
         public static int[,] Matrix;
@@ -41,14 +47,21 @@ namespace TulaI
         public static SortedSet<Task> Pipe = new SortedSet<Task>();
         public static int BestScore = Int32.MaxValue;
         public static int Counter = 0;
+        //public static int CounterMax = 4300000;
+        public static int CounterMax = 3300000;
 
-        static int Req(Task task, int len)
+        static ReqResult Req(Task task, int len)
         {
-            if(Counter > 3300000)
-            {
-                return BestScore;
-            }
             Counter++;
+
+            if (Counter > CounterMax || len >= BestScore)
+            {
+                return new ReqResult() {
+                    Value = BestScore,
+                    AllowCash = false
+                };
+            }
+            
 
             if (task.Path.Length <= 3)
             {
@@ -56,7 +69,7 @@ namespace TulaI
                 {
                     BestScore = len;
                 }
-                return 0;
+                return new ReqResult();
             }
 
             if ( cash.ContainsKey(task.Hash)) 
@@ -66,44 +79,93 @@ namespace TulaI
                 {
                     BestScore = cashv + len;
                 }
-                return cashv;
+                return new ReqResult()
+                {
+                    Value = cashv
+                };
             }
 
-            var vertexes = new Task[task.Path.Length];
+            var vertexes = new SortedSet<Task>();
+            var isSkiped = false;
             for (int i = 0; i < task.Path.Length; i++)
             {
+                var vert = task.Path[i];
+                var prev = task.Path[i == 0 ? task.Path.Length - 1 : i - 1];
+                var next = task.Path[i == task.Path.Length - 1 ? 0 : i + 1];
+                var cutValue = Matrix[prev, next];
+                if(len+cutValue >= BestScore)
+                {
+                    isSkiped = true;
+                    continue;
+                }
+
                 var newpath = new int[task.Path.Length - 1];
                 Array.Copy(task.Path, 0, newpath, 0, i);
                 Array.Copy(task.Path, i + 1, newpath, i, task.Path.Length - i - 1);
-
-                var v = task.Path[i];
-                var v1 = task.Path[i == 0 ? task.Path.Length - 1 : i - 1];
-                var v2 = task.Path[i == task.Path.Length - 1 ? 0 : i + 1];
-                var cutValue = Matrix[v1, v2];
+             
                 var value = cutValue;
                 for(int j = 0; j < task.Path.Length; j++)
                 {
                     var curv = task.Path[j];
-                    if (curv != v && curv != v1 && curv != v2)
+                    if (curv != vert && curv != prev && curv != next)
                     {
-                        value -= Matrix[v, curv];
+                        value -= Matrix[vert, curv];
+                    }
+
+                    if (Counter > CounterMax)
+                    {
+                        return new ReqResult()
+                        {
+                            Value = BestScore,
+                            AllowCash = false
+                        };
                     }
                 }
-                vertexes[i] = new Task(value, newpath)
+
+                vertexes.Add(new Task(value, newpath)
                 {
                     CutValue = cutValue
-                };
-                
+                });
+
             }
-            Array.Sort(vertexes);
-            var res = Int32.MaxValue;
+            
+            var result = Int32.MaxValue;
+            var allowCash = false;
             foreach(var vertex in vertexes)
             {
                 var r = Req(vertex, len + vertex.CutValue);
-                res = Math.Min(res, r == int.MaxValue ? int.MaxValue : r + vertex.CutValue);
+                var rv = r.Value == int.MaxValue ? int.MaxValue : r.Value + vertex.CutValue;
+                if( result > rv)
+                {
+                    result = rv;
+                    allowCash = r.AllowCash;
+                }
+                else if ( result == rv && r.AllowCash)
+                {
+                    allowCash = r.AllowCash;
+                }
+
+                if (Counter > CounterMax)
+                {
+                    return new ReqResult()
+                    {
+                        Value = BestScore,
+                        AllowCash = false
+                    };
+                }
             }
-            cash[task.Hash] = res;
-            return res;
+
+            allowCash = allowCash && !isSkiped;
+
+            if (allowCash)
+            {
+                cash[task.Hash] = result;
+            }
+            
+            return new ReqResult() {
+                Value = result,
+                AllowCash = allowCash
+            };
         }
 
         public static int Deep()
@@ -114,7 +176,7 @@ namespace TulaI
                 path[i] = i;
             }
 
-            return Req(new Task(0, path), 0);
+            return Req(new Task(0, path), 0).Value;
         }
 
         public static int Dijkstra()
