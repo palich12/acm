@@ -11,6 +11,7 @@ namespace TulaI
         public int Value;
         public int[] Path;
         public Int64 Hash;
+        public int CutValue;
 
         public Task(int value, int[] path)
         {
@@ -41,15 +42,15 @@ namespace TulaI
         public static int BestScore = Int32.MaxValue;
         public static int Counter = 0;
 
-        static int Req( int[] path, int len)
+        static int Req(Task task, int len)
         {
-            if(Counter > 6500000)
+            if(Counter > 3300000)
             {
                 return BestScore;
             }
             Counter++;
 
-            if (path.Length <= 3)
+            if (task.Path.Length <= 3)
             {
                 if(len < BestScore)
                 {
@@ -58,10 +59,9 @@ namespace TulaI
                 return 0;
             }
 
-            var pathhash = GetHash(path);
-            if ( cash.ContainsKey(pathhash)) 
+            if ( cash.ContainsKey(task.Hash)) 
             {
-                var cashv = cash[pathhash];
+                var cashv = cash[task.Hash];
                 if (cashv + len < BestScore )
                 {
                     BestScore = cashv + len;
@@ -69,17 +69,40 @@ namespace TulaI
                 return cashv;
             }
 
-            var res = Int32.MaxValue;
-            for ( int i = 0; i < path.Length; i ++)
+            var vertexes = new Task[task.Path.Length];
+            for (int i = 0; i < task.Path.Length; i++)
             {
-                var newpath = new int[path.Length - 1];
-                Array.Copy(path, 0, newpath, 0, i);
-                Array.Copy(path, i + 1, newpath, i, path.Length - i - 1);
-                var dlen = Matrix[path[i == 0 ? path.Length - 1 : i - 1], path[i == path.Length - 1 ? 0 : i + 1]];
-                var r = Req(newpath, len + dlen);
-                res = Math.Min(res, r == int.MaxValue ? int.MaxValue : r + dlen);
+                var newpath = new int[task.Path.Length - 1];
+                Array.Copy(task.Path, 0, newpath, 0, i);
+                Array.Copy(task.Path, i + 1, newpath, i, task.Path.Length - i - 1);
+
+                var v = task.Path[i];
+                var v1 = task.Path[i == 0 ? task.Path.Length - 1 : i - 1];
+                var v2 = task.Path[i == task.Path.Length - 1 ? 0 : i + 1];
+                var cutValue = Matrix[v1, v2];
+                var value = cutValue;
+                for(int j = 0; j < task.Path.Length; j++)
+                {
+                    var curv = task.Path[j];
+                    if (curv != v && curv != v1 && curv != v2)
+                    {
+                        value -= Matrix[v, curv];
+                    }
+                }
+                vertexes[i] = new Task(value, newpath)
+                {
+                    CutValue = cutValue
+                };
+                
             }
-            cash[pathhash] = res;
+            Array.Sort(vertexes);
+            var res = Int32.MaxValue;
+            foreach(var vertex in vertexes)
+            {
+                var r = Req(vertex, len + vertex.CutValue);
+                res = Math.Min(res, r == int.MaxValue ? int.MaxValue : r + vertex.CutValue);
+            }
+            cash[task.Hash] = res;
             return res;
         }
 
@@ -91,7 +114,7 @@ namespace TulaI
                 path[i] = i;
             }
 
-            return Req(path, 0);
+            return Req(new Task(0, path), 0);
         }
 
         public static int Dijkstra()
