@@ -33,6 +33,34 @@ namespace TulaI
         }
     }
 
+    class Task2 : Task
+    {
+        public List<int[]> Parts;
+        public Task2(int value, List<int[]> parts) : base(value, null)
+        {
+            Parts = parts;
+            Hash = GetHash2(Parts);
+        }
+
+        public static Int64 GetHash2(List<int[]> parts)
+        {
+            Int64 res = 1;
+            foreach (var part in parts)
+            {
+                for (var i = 0; i < part.Length; i++)
+                {
+                    //res *= i;
+                    res *= 500;
+                    res += part[i];
+                }
+                res *= 500;
+                res += Program.N;
+            }
+            
+            return res;
+        }
+    }
+
     class ReqResult
     {
         public int Value = 0;
@@ -44,7 +72,6 @@ namespace TulaI
         public static int[,] Matrix;
         public static int N;
         public static Dictionary<Int64, int> cash = new Dictionary<Int64, int>();
-        public static SortedSet<Task> Pipe = new SortedSet<Task>();
         public static int BestScore = Int32.MaxValue;
         public static int Counter = 0;
         //public static int CounterMax = 4300000;
@@ -181,6 +208,8 @@ namespace TulaI
 
         public static int Dijkstra()
         {
+            var Pipe = new SortedSet<Task>();
+
             var path = new int[N];
             for (int i = 0; i < N; i++)
             {
@@ -225,8 +254,92 @@ namespace TulaI
             return BestScore;
         }
 
+        public static int Dijkstra2()
+        {
+            var Pipe = new SortedSet<Task2>();
+
+            var path = new int[N];
+            for (int i = 0; i < N; i++)
+            {
+                path[i] = i;
+            }
+
+            Pipe.Add(new Task2(0, new List<int[]> { path }));
+
+            while (Pipe.Count > 0)
+            {
+                var task = Pipe.Min;
+                Pipe.Remove(task);
+
+                if (task.Parts.Count == 0)
+                {
+                    BestScore = task.Value;
+                    return task.Value;
+                }
+
+                if (cash.ContainsKey(task.Hash))
+                {
+                    continue;
+                }
+                cash[task.Hash] = task.Value;
+
+
+                for (int i = 0; i < task.Parts.Count; i ++)
+                {
+                    path = task.Parts[i];
+
+                    for (int j = 0; j < path.Length - 2; j++)
+                    {
+                        for (int k = j + 2; k < path.Length; k++ )
+                        {
+                            var newparts = new List<int[]>();
+                            for( var i1 = 0; i1 < task.Parts.Count; i1++)
+                            {
+                                if ( i1 == i )
+                                {
+                                    if ((j + 1) + (path.Length - k) > 3)
+                                    {
+                                        var newpath = new int[(j + 1) + (path.Length - k)];
+                                        Array.Copy(path, 0, newpath, 0, j + 1);
+                                        Array.Copy(path, k, newpath, j + 1, path.Length - k);
+                                        newparts.Add(newpath);
+                                    }
+                                    if (k - j + 1 > 3 )
+                                    {
+                                        var newpath = new int[k - j + 1];
+                                        Array.Copy(path, j, newpath, 0, newpath.Length);
+                                        newparts.Add(newpath);
+                                    }
+                                }
+                                else
+                                {
+                                    newparts.Add(task.Parts[i1]);
+                                }
+                            }
+
+                            var value = task.Value + Matrix[path[j], path[k]];
+                            var newtask = new Task2(value, newparts);
+                            if (cash.ContainsKey(newtask.Hash))
+                            {
+                                continue;
+                            }
+                            Pipe.Add(newtask);
+                        }
+
+                        
+                    }
+                }
+            }
+
+            return BestScore;
+        }
+
         public static Int64 GetHash(int[] path)
         {
+            if (path == null)
+            {
+                return 0;
+            }
             Int64 res = 1;
             for ( var i = 0; i < path.Length; i++)
             {
@@ -251,7 +364,8 @@ namespace TulaI
                 }
             }
 
-            Deep();
+            //Deep();
+            Dijkstra2();
 
             Console.WriteLine(BestScore);
             Console.ReadLine();
