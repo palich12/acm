@@ -35,14 +35,14 @@ namespace TulaI
 
     class Task2 : Task
     {
-        public List<int[]> Parts;
-        public Task2(int value, List<int[]> parts) : base(value, null)
+        public int[][] Parts;
+        public Task2(int value, int[][] parts) : base(value, null)
         {
             Parts = parts;
             Hash = GetHash2(Parts);
         }
 
-        public static Int64 GetHash2(List<int[]> parts)
+        public static Int64 GetHash2(int[][] parts)
         {
             Int64 res = 1;
             foreach (var part in parts)
@@ -264,14 +264,14 @@ namespace TulaI
                 path[i] = i;
             }
 
-            Pipe.Add(new Task2(0, new List<int[]> { path }));
+            Pipe.Add(new Task2(0, new int[][] { path }));
 
             while (Pipe.Count > 0)
             {
                 var task = Pipe.Min;
                 Pipe.Remove(task);
 
-                if (task.Parts.Count == 0)
+                if (task.Parts.Length == 0)
                 {
                     BestScore = task.Value;
                     return task.Value;
@@ -284,7 +284,7 @@ namespace TulaI
                 cash[task.Hash] = task.Value;
 
 
-                for (int i = 0; i < task.Parts.Count; i ++)
+                for (int i = 0; i < task.Parts.Length; i ++)
                 {
                     path = task.Parts[i];
 
@@ -292,30 +292,25 @@ namespace TulaI
                     {
                         for (int k = j + 2; k < path.Length; k++ )
                         {
-                            var newparts = new List<int[]>();
-                            for( var i1 = 0; i1 < task.Parts.Count; i1++)
+                            
+                            var leftpart = (j + 1) + (path.Length - k) > 3;
+                            var rightpart = k - j + 1 > 3;                        
+                            var newparts = new int[task.Parts.Length - 1 + (leftpart ? 1 : 0) + (rightpart ? 1 : 0)][];
+                            Array.Copy(task.Parts, 0, newparts, 0, i);
+                            if (leftpart)
                             {
-                                if ( i1 == i )
-                                {
-                                    if ((j + 1) + (path.Length - k) > 3)
-                                    {
-                                        var newpath = new int[(j + 1) + (path.Length - k)];
-                                        Array.Copy(path, 0, newpath, 0, j + 1);
-                                        Array.Copy(path, k, newpath, j + 1, path.Length - k);
-                                        newparts.Add(newpath);
-                                    }
-                                    if (k - j + 1 > 3 )
-                                    {
-                                        var newpath = new int[k - j + 1];
-                                        Array.Copy(path, j, newpath, 0, newpath.Length);
-                                        newparts.Add(newpath);
-                                    }
-                                }
-                                else
-                                {
-                                    newparts.Add(task.Parts[i1]);
-                                }
+                                var newpath = new int[(j + 1) + (path.Length - k)];
+                                Array.Copy(path, 0, newpath, 0, j + 1);
+                                Array.Copy(path, k, newpath, j + 1, path.Length - k);
+                                newparts[i] = newpath;
                             }
+                            if (rightpart)
+                            {
+                                var newpath = new int[k - j + 1];
+                                Array.Copy(path, j, newpath, 0, newpath.Length);
+                                newparts[i + (leftpart ? 1 : 0)] = newpath;
+                            }
+                            Array.Copy(task.Parts, i + 1, newparts, i + (leftpart ? 1 : 0) + (rightpart ? 1 : 0), task.Parts.Length - i - 1);
 
                             var value = task.Value + Matrix[path[j], path[k]];
                             var newtask = new Task2(value, newparts);
