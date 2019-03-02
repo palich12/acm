@@ -77,6 +77,8 @@ namespace TulaI
         //public static int CounterMax = 4300000;
         public static int CounterMax = 3300000;
 
+        public static int[,] Table;
+
         static ReqResult Req(Task task, int len)
         {
             Counter++;
@@ -345,22 +347,48 @@ namespace TulaI
             return res;  
         }
 
+        public static int Req2( int x, int y)
+        {
+            if(y-x <= 2)
+            {
+                return 0;
+            }
+
+            if (Table[x,y] != -1)
+            {
+                return Table[x, y];
+            }
+
+            int res = int.MaxValue;
+            for(int i = x+1; i < y; i++)
+            {
+                int val = Matrix[x, i] + Matrix[i, y] + Req2(x, i) + Req2(i, y);
+                res = Math.Min(res, val);
+            }
+
+            Table[x, y] = res;
+            return res;
+        }
+
         static void Main(string[] args)
         {
             N = Int32.Parse(Console.ReadLine());
             Matrix = new int[N,N];
+            Table = new int[N, N];
 
-            for(int i = 0; i < N; i++)
+            for (int i = 0; i < N; i++)
             {
                 var l = Console.ReadLine().Split(new char[] { ' ' });
                 for(int j=0; j < N; j++)
                 {
                     Matrix[i, j] = Int32.Parse(l[j]);
+                    Table[i, j] = -1;
                 }
             }
 
             //Deep();
-            Dijkstra2();
+            //Dijkstra2();
+            BestScore = Req2(0, N-1);
 
             Console.WriteLine(BestScore);
             Console.ReadLine();
