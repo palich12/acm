@@ -1,0 +1,10 @@
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\bin\Debug\netcoreapp2.1\YarQual2019K.deps.json
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\bin\Debug\netcoreapp2.1\YarQual2019K.runtimeconfig.json
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\bin\Debug\netcoreapp2.1\YarQual2019K.runtimeconfig.dev.json
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\bin\Debug\netcoreapp2.1\YarQual2019K.dll
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\bin\Debug\netcoreapp2.1\YarQual2019K.pdb
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\obj\Debug\netcoreapp2.1\YarQual2019K.csproj.CoreCompileInputs.cache
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\obj\Debug\netcoreapp2.1\YarQual2019K.AssemblyInfoInputs.cache
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\obj\Debug\netcoreapp2.1\YarQual2019K.AssemblyInfo.cs
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\obj\Debug\netcoreapp2.1\YarQual2019K.dll
+C:\Users\i\source\repos\acm\YarQual2019K\YarQual2019K\obj\Debug\netcoreapp2.1\YarQual2019K.pdb
