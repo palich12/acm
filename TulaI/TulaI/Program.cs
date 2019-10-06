@@ -4,23 +4,69 @@ using System.Collections.Generic;
 
 namespace TulaI
 {
-
-    public class Entity : IComparable
+    class Task : IComparable
     {
-        public List<int> path;
-        public int w;
+        public static int IndexCounter = 0;
+        public int Index;
+        public int Value;
+        public int[] Path;
+        public Int64 Hash;
+        public int CutValue;
+
+        public Task(int value, int[] path)
+        {
+            Path = path;
+            Value = value;
+            Hash = Program.GetHash(Path);
+            Index = IndexCounter;
+            IndexCounter++;
+        }
 
         public int CompareTo(object obj)
         {
-            return w.CompareTo(((Entity)obj).w);
+            var r = Value.CompareTo((obj as Task).Value);
+            if(r == 0)
+            {
+                return Index.CompareTo((obj as Task).Index);
+            }
+            return r;
         }
     }
 
-    public class ReqResult
+    class Task2 : Task
     {
-        public int Result;
-        public bool Uncash;
+        public int[][] Parts;
+        public Task2(int value, int[][] parts) : base(value, null)
+        {
+            Parts = parts;
+            Hash = GetHash2(Parts);
+        }
+
+        public static Int64 GetHash2(int[][] parts)
+        {
+            Int64 res = 1;
+            foreach (var part in parts)
+            {
+                for (var i = 0; i < part.Length; i++)
+                {
+                    //res *= i;
+                    res *= 500;
+                    res += part[i];
+                }
+                res *= 500;
+                res += Program.N;
+            }
+            
+            return res;
+        }
     }
+
+    class ReqResult
+    {
+        public int Value = 0;
+        public bool AllowCash = true;
+    }
+
     class Program
     {
         public static int[,] Matrix;
@@ -28,90 +74,326 @@ namespace TulaI
         public static Dictionary<Int64, int> cash = new Dictionary<Int64, int>();
         public static int BestScore = Int32.MaxValue;
         public static int Counter = 0;
+        //public static int CounterMax = 4300000;
+        public static int CounterMax = 3300000;
 
-        static void Main(string[] args)
+        public static int[,] Table;
+
+        static ReqResult Req(Task task, int len)
         {
-            N = Int32.Parse(Console.ReadLine());
-            Matrix = new int[N,N];
+            Counter++;
 
-            for(int i = 0; i < N; i++)
+            if (Counter > CounterMax || len >= BestScore)
             {
-                var l = Console.ReadLine().Split(new char[] { ' ' });
-                for(int j=0; j < N; j++)
+                return new ReqResult() {
+                    Value = BestScore,
+                    AllowCash = false
+                };
+            }
+            
+
+            if (task.Path.Length <= 3)
+            {
+                if(len < BestScore)
                 {
-                    Matrix[i, j] = Int32.Parse(l[j]);
+                    BestScore = len;
+                }
+                return new ReqResult();
+            }
+
+            if ( cash.ContainsKey(task.Hash)) 
+            {
+                var cashv = cash[task.Hash];
+                if (cashv + len < BestScore )
+                {
+                    BestScore = cashv + len;
+                }
+                return new ReqResult()
+                {
+                    Value = cashv
+                };
+            }
+
+            var vertexes = new SortedSet<Task>();
+            var isSkiped = false;
+            for (int i = 0; i < task.Path.Length; i++)
+            {
+                var vert = task.Path[i];
+                var prev = task.Path[i == 0 ? task.Path.Length - 1 : i - 1];
+                var next = task.Path[i == task.Path.Length - 1 ? 0 : i + 1];
+                var cutValue = Matrix[prev, next];
+                if(len+cutValue >= BestScore)
+                {
+                    isSkiped = true;
+                    continue;
+                }
+
+                var newpath = new int[task.Path.Length - 1];
+                Array.Copy(task.Path, 0, newpath, 0, i);
+                Array.Copy(task.Path, i + 1, newpath, i, task.Path.Length - i - 1);
+             
+                var value = cutValue;
+                for(int j = 0; j < task.Path.Length; j++)
+                {
+                    var curv = task.Path[j];
+                    if (curv != vert && curv != prev && curv != next)
+                    {
+                        value -= Matrix[vert, curv];
+                    }
+
+                    if (Counter > CounterMax)
+                    {
+                        return new ReqResult()
+                        {
+                            Value = BestScore,
+                            AllowCash = false
+                        };
+                    }
+                }
+
+                vertexes.Add(new Task(value, newpath)
+                {
+                    CutValue = cutValue
+                });
+
+            }
+            
+            var result = Int32.MaxValue;
+            var allowCash = false;
+            foreach(var vertex in vertexes)
+            {
+                var r = Req(vertex, len + vertex.CutValue);
+                var rv = r.Value == int.MaxValue ? int.MaxValue : r.Value + vertex.CutValue;
+                if( result > rv)
+                {
+                    result = rv;
+                    allowCash = r.AllowCash;
+                }
+                else if ( result == rv && r.AllowCash)
+                {
+                    allowCash = r.AllowCash;
+                }
+
+                if (Counter > CounterMax)
+                {
+                    return new ReqResult()
+                    {
+                        Value = BestScore,
+                        AllowCash = false
+                    };
                 }
             }
 
-            //req(new List<int>());
-            
-            Console.WriteLine(req(new List<int>()));
-            //Console.ReadLine();
-            
+            allowCash = allowCash && !isSkiped;
 
+            if (allowCash)
+            {
+                cash[task.Hash] = result;
+            }
+            
+            return new ReqResult() {
+                Value = result,
+                AllowCash = allowCash
+            };
         }
 
-        static int req( List<int> path )
+        public static int Deep()
         {
-            if (N - path.Count <= 3)
+            var path = new int[N];
+            for (int i = 0; i < N; i++)
+            {
+                path[i] = i;
+            }
+
+            return Req(new Task(0, path), 0).Value;
+        }
+
+        public static int Dijkstra()
+        {
+            var Pipe = new SortedSet<Task>();
+
+            var path = new int[N];
+            for (int i = 0; i < N; i++)
+            {
+                path[i] = i;
+            }
+
+            Pipe.Add(new Task(0, path));
+
+            while (Pipe.Count > 0)
+            {
+                Task task = (Task)Pipe.Min;
+                Pipe.Remove(task);
+
+                if (task.Path.Length <= 3)
+                {
+                    BestScore = task.Value;
+                    return task.Value;
+                }
+
+                if (cash.ContainsKey(task.Hash))
+                {
+                    continue;
+                }
+                cash[task.Hash] = task.Value;
+
+                for (int i = 0; i < task.Path.Length; i++)
+                {
+                    var newpath = new int[task.Path.Length - 1];
+                    Array.Copy(task.Path, 0, newpath, 0, i);
+                    Array.Copy(task.Path, i + 1, newpath, i, task.Path.Length - i - 1);
+                    var value = task.Value + Matrix[task.Path[i == 0 ? task.Path.Length - 1 : i - 1], task.Path[i == task.Path.Length - 1 ? 0 : i + 1]];
+                    var newtask = new Task(value, newpath);
+                    if (cash.ContainsKey(newtask.Hash))
+                    {
+                        continue;
+                    }
+                    Pipe.Add(newtask);
+                }
+
+            }
+
+            return BestScore;
+        }
+
+        public static int Dijkstra2()
+        {
+            var Pipe = new SortedSet<Task2>();
+
+            var path = new int[N];
+            for (int i = 0; i < N; i++)
+            {
+                path[i] = i;
+            }
+
+            Pipe.Add(new Task2(0, new int[][] { path }));
+
+            while (Pipe.Count > 0)
+            {
+                var task = Pipe.Min;
+                Pipe.Remove(task);
+
+                if (task.Parts.Length == 0)
+                {
+                    BestScore = task.Value;
+                    return task.Value;
+                }
+
+                if (cash.ContainsKey(task.Hash))
+                {
+                    continue;
+                }
+                cash[task.Hash] = task.Value;
+
+
+                for (int i = 0; i < task.Parts.Length; i ++)
+                {
+                    path = task.Parts[i];
+
+                    for (int j = 0; j < path.Length - 2; j++)
+                    {
+                        for (int k = j + 2; k < path.Length; k++ )
+                        {
+                            
+                            var leftpart = (j + 1) + (path.Length - k) > 3;
+                            var rightpart = k - j + 1 > 3;                        
+                            var newparts = new int[task.Parts.Length - 1 + (leftpart ? 1 : 0) + (rightpart ? 1 : 0)][];
+                            Array.Copy(task.Parts, 0, newparts, 0, i);
+                            if (leftpart)
+                            {
+                                var newpath = new int[(j + 1) + (path.Length - k)];
+                                Array.Copy(path, 0, newpath, 0, j + 1);
+                                Array.Copy(path, k, newpath, j + 1, path.Length - k);
+                                newparts[i] = newpath;
+                            }
+                            if (rightpart)
+                            {
+                                var newpath = new int[k - j + 1];
+                                Array.Copy(path, j, newpath, 0, newpath.Length);
+                                newparts[i + (leftpart ? 1 : 0)] = newpath;
+                            }
+                            Array.Copy(task.Parts, i + 1, newparts, i + (leftpart ? 1 : 0) + (rightpart ? 1 : 0), task.Parts.Length - i - 1);
+
+                            var value = task.Value + Matrix[path[j], path[k]];
+                            var newtask = new Task2(value, newparts);
+                            if (cash.ContainsKey(newtask.Hash))
+                            {
+                                continue;
+                            }
+                            Pipe.Add(newtask);
+                        }
+
+                        
+                    }
+                }
+            }
+
+            return BestScore;
+        }
+
+        public static Int64 GetHash(int[] path)
+        {
+            if (path == null)
             {
                 return 0;
             }
-
-            var pathhash = GetHash(path);
-            if ( cash.ContainsKey(pathhash)) 
-            {
-                return cash[pathhash];
-            }
-
-            var res = Int32.MaxValue;
-            for (int i = 0; i < N; i++)
-            {
-
-                if (!path.Contains(i))
-                {
-                    int index = -1;
-                    for (int j1 = i+1; j1 < N + 2; j1++)
-                    {
-                        int j = j1 % N;
-                        if (!path.Contains(j))
-                        {
-                            if (index == -1)
-                            {
-                                index = j;
-                            }
-                            else
-                            {
-                                var newpath = new List<int>(path)
-                                    {
-                                        index
-                                    };
-                                newpath.Sort();
-
-                                var r = req(newpath);
-                                res = Math.Min(res, r == int.MaxValue ? int.MaxValue : r + Matrix[i, j]);
-                                break;
-                            }
-                        }
-                        
-                    }
-                }              
-            }
-
-            cash[pathhash] = res;
-            return res;
-        }
-
-        public static Int64 GetHash(List<int> path)
-        {
             Int64 res = 1;
-            for ( var i = 0; i < path.Count; i++)
+            for ( var i = 0; i < path.Length; i++)
             {
                 //res *= i;
                 res *= 500;
                 res += path[i];
             }
             return res;  
+        }
+
+        public static int Req2( int x, int y)
+        {
+            if(y-x <= 2)
+            {
+                return 0;
+            }
+
+            if (Table[x,y] != -1)
+            {
+                return Table[x, y];
+            }
+
+            int res = int.MaxValue;
+            for(int i = x+1; i < y; i++)
+            {
+                int val = Matrix[x, i] + Matrix[i, y] + Req2(x, i) + Req2(i, y);
+                res = Math.Min(res, val);
+            }
+
+            Table[x, y] = res;
+            return res;
+        }
+
+        static void Main(string[] args)
+        {
+            N = Int32.Parse(Console.ReadLine());
+            Matrix = new int[N,N];
+            Table = new int[N, N];
+
+            for (int i = 0; i < N; i++)
+            {
+                var l = Console.ReadLine().Split(new char[] { ' ' });
+                for(int j=0; j < N; j++)
+                {
+                    Matrix[i, j] = Int32.Parse(l[j]);
+                    Table[i, j] = -1;
+                }
+            }
+
+            //Deep();
+            //Dijkstra2();
+            BestScore = Req2(0, N-1);
+
+            Console.WriteLine(BestScore);
+            Console.ReadLine();
+            
+
         }
     }
 }
