@@ -6,9 +6,14 @@ namespace YarQual2019I
 {
     class index
     {
-        public int tailLength { get; set; }
-        public int cycleLength { get; set; }
-        public int cycleStart { get; set; }
+        public int tailLength;
+        public int cycleLength;
+        public int cycleStart;
+
+        public int[] cycleChain;
+        public int cyclePosition;
+
+        public List<int> tailChain = new List<int>();
     }
 
     class Program
@@ -25,9 +30,6 @@ namespace YarQual2019I
             int[] R = Console.ReadLine().Split(new char[] { ' ' }).Select(s => int.Parse(s) - 1).ToArray<int>();
             index[] indexL = new index[N];
             index[] indexR = new index[N];
-
-            //calcIndexes(indexL, L);
-            //calcIndexes(indexR, R);
 
             for ( int i = 0; i < Q; i++)
             {
@@ -49,14 +51,20 @@ namespace YarQual2019I
                 if ( l >= ind[station].tailLength)
                 {
                     l -= ind[station].tailLength;
-                    l %= ind[station].cycleLength;
                     station = ind[station].cycleStart;
+
+                    l = (l + ind[station].cyclePosition) % ind[station].cycleLength;
+                    station = ind[station].cycleChain[l];
                 }
-                while ( l > 0)
+                else
                 {
-                    station = G[station];
-                    l--;
+                    while (l > 0)
+                    {
+                        station = G[station];
+                        l--;
+                    }
                 }
+                
 
                 coin = !coin;
 
@@ -69,13 +77,18 @@ namespace YarQual2019I
                 if (l >= ind[station].tailLength)
                 {
                     l -= ind[station].tailLength;
-                    l %= ind[station].cycleLength;
                     station = ind[station].cycleStart;
+
+                    l = (l + ind[station].cyclePosition) % ind[station].cycleLength;
+                    station = ind[station].cycleChain[l];
                 }
-                while (l > 0)
+                else
                 {
-                    station = G[station];
-                    l--;
+                    while (l > 0)
+                    {
+                        station = G[station];
+                        l--;
+                    }
                 }
 
                 Console.WriteLine(station+1);
@@ -110,14 +123,34 @@ namespace YarQual2019I
             int cycleLength = l - arr[j];
             int tailLength = 0;
             bool inCycle = true;
+
+            int cyclePosition = -1;
+            int[] cycleChain = null;
+            List<int> tailCain = null;
+            
+
             if (index[j] != null)
             {
                 cycleStart = index[j].cycleStart;
                 cycleLength = index[j].cycleLength;
                 tailLength = index[j].tailLength;
                 inCycle = false;
-            }
 
+                if ( index[j].tailChain.Count == index[j].tailLength )
+                {
+                    tailCain = index[j].tailChain;
+                }
+                else
+                {
+                    tailCain = index[j].tailChain.GetRange(0, index[j].tailLength);
+                }
+            }
+            else
+            {
+                cyclePosition = cycleLength - 1;
+                cycleChain = new int[cycleLength];
+            }
+           
             while (stack.Count > 0)
             {
                 j = stack.Pop();
@@ -131,11 +164,25 @@ namespace YarQual2019I
                 tailLength = inCycle ? 0 : tailLength + 1;
                 ind.tailLength = tailLength;
 
+                if (cyclePosition >= 0)
+                {
+                    cycleChain[cyclePosition] = j;
+                    ind.cycleChain = cycleChain;
+                    ind.cyclePosition = cyclePosition;
+                    cyclePosition--;
+                }
+                else
+                {
+                    tailCain.Add(j);
+                    ind.tailChain = tailCain;
+                }
+
 
                 index[j] = ind;
-                if (j == cycleStart)
+                if (j == cycleStart && inCycle)
                 {
                     inCycle = false;
+                    tailCain = new List<int>();
                 }
             }
             
