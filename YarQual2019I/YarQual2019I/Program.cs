@@ -47,25 +47,8 @@ namespace YarQual2019I
                 G = coin ? L : R;
 
                 calcIndexes(ind, G, station);
-
-                if ( l >= ind[station].tailLength)
-                {
-                    l -= ind[station].tailLength;
-                    station = ind[station].cycleStart;
-
-                    l = (l + ind[station].cyclePosition) % ind[station].cycleLength;
-                    station = ind[station].cycleChain[l];
-                }
-                else
-                {
-                    while (l > 0)
-                    {
-                        station = G[station];
-                        l--;
-                    }
-                }
+                station = go(station,l, G, ind);
                 
-
                 coin = !coin;
 
                 l = coin ? req[1] : req[2];
@@ -73,23 +56,7 @@ namespace YarQual2019I
                 G = coin ? L : R;
 
                 calcIndexes(ind, G, station);
-
-                if (l >= ind[station].tailLength)
-                {
-                    l -= ind[station].tailLength;
-                    station = ind[station].cycleStart;
-
-                    l = (l + ind[station].cyclePosition) % ind[station].cycleLength;
-                    station = ind[station].cycleChain[l];
-                }
-                else
-                {
-                    while (l > 0)
-                    {
-                        station = G[station];
-                        l--;
-                    }
-                }
+                station = go(station, l, G, ind);
 
                 Console.WriteLine(station+1);
             }
@@ -179,7 +146,7 @@ namespace YarQual2019I
 
 
                 index[j] = ind;
-                if (j == cycleStart && inCycle)
+                if (cyclePosition == -1 && inCycle)
                 {
                     inCycle = false;
                     tailCain = new List<int>();
@@ -187,5 +154,29 @@ namespace YarQual2019I
             }
             
         }
+
+        static int go(int station, int l, int[] G, index[] ind)
+        {
+
+
+            calcIndexes(ind, G, station);
+
+            if (l >= ind[station].tailLength)
+            {
+                l -= ind[station].tailLength;
+                station = ind[station].cycleStart;
+
+                l = (l + ind[station].cyclePosition) % ind[station].cycleLength;
+                station = ind[station].cycleChain[l];
+            }
+            else
+            {
+                l = ind[station].tailLength - l - 1;
+                station = ind[station].tailChain[l];
+            }
+
+            return station;
+        }
+
     }
 }
