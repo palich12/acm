@@ -13,7 +13,7 @@ namespace YarQual2019I
         public int[] cycleChain;
         public int cyclePosition;
 
-        public List<int> tailChain = new List<int>();
+        public int[] tailChain = new int[0];
     }
 
     class Program
@@ -45,8 +45,6 @@ namespace YarQual2019I
                 l = coin ? req[1] : req[2];
                 ind = coin ? indexL : indexR;
                 G = coin ? L : R;
-
-                calcIndexes(ind, G, station);
                 station = go(station,l, G, ind);
                 
                 coin = !coin;
@@ -55,7 +53,6 @@ namespace YarQual2019I
                 ind = coin ? indexL : indexR;
                 G = coin ? L : R;
 
-                calcIndexes(ind, G, station);
                 station = go(station, l, G, ind);
 
                 Console.WriteLine(station+1);
@@ -93,7 +90,7 @@ namespace YarQual2019I
 
             int cyclePosition = -1;
             int[] cycleChain = null;
-            List<int> tailCain = null;
+            List<int> tailCain = new List<int>();
             
 
             if (index[j] != null)
@@ -103,13 +100,14 @@ namespace YarQual2019I
                 tailLength = index[j].tailLength;
                 inCycle = false;
 
-                if ( index[j].tailChain.Count == index[j].tailLength )
+                if ( index[j].tailChain.Length == index[j].tailLength )
                 {
-                    tailCain = index[j].tailChain;
+                    tailCain = index[j].tailChain.ToList();
+                    
                 }
                 else
                 {
-                    tailCain = index[j].tailChain.GetRange(0, index[j].tailLength);
+                    tailCain = index[j].tailChain.ToList().GetRange(0, index[j].tailLength);
                 }
             }
             else
@@ -141,7 +139,7 @@ namespace YarQual2019I
                 else
                 {
                     tailCain.Add(j);
-                    ind.tailChain = tailCain;
+                    ind.tailChain = tailCain.ToArray();
                 }
 
 
