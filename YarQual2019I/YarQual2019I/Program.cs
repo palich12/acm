@@ -33,18 +33,14 @@ namespace YarQual2019I
 
             for ( int i = 0; i < Q; i++)
             {
-                var req = Console.ReadLine().Split(new char[] { ' ' }).Select(int.Parse).ToArray<int>();
+                var req = Console.ReadLine().Split(new char[] { ' ' }).Select(Int64.Parse).ToArray<Int64>();
 
-                int station = req[0] - 1;
-                int c = req[3];
-                int l;
+                int station = (int)(req[0] - 1);
                 index[] ind;
-                int[] G;
-                bool coin = c == 0;
-
-                l = coin ? req[1] : req[2];
+                bool coin = req[3] == 0;
+                Int64 l = coin ? req[1] : req[2];
                 ind = coin ? indexL : indexR;
-                G = coin ? L : R;
+                int[] G = coin ? L : R;
                 station = go(station,l, G, ind);
                 
                 coin = !coin;
@@ -153,7 +149,7 @@ namespace YarQual2019I
             
         }
 
-        static int go(int station, int l, int[] G, index[] ind)
+        static int go(int station, Int64 l, int[] G, index[] ind)
         {
 
 
