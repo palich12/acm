@@ -13,7 +13,8 @@ namespace YarQual2019I
         public int[] cycleChain;
         public int cyclePosition;
 
-        public int[] tailChain = new int[0];
+        public List<int> tailChain = null;
+        public int nextTail = -1;
     }
 
     class Program
@@ -86,7 +87,8 @@ namespace YarQual2019I
 
             int cyclePosition = -1;
             int[] cycleChain = null;
-            List<int> tailCain = new List<int>();
+            var tailCain = new List<int>();
+            int nextTail = -1;
             
 
             if (index[j] != null)
@@ -96,14 +98,20 @@ namespace YarQual2019I
                 tailLength = index[j].tailLength;
                 inCycle = false;
 
-                if ( index[j].tailChain.Length == index[j].tailLength )
+                if(index[j].tailChain == null)
                 {
-                    tailCain = index[j].tailChain.ToList();
+                    tailCain = new List<int>();
+                }
+                else if ( index[j].tailChain.Count == index[j].tailLength )
+                {
+
+                    tailCain = index[j].tailChain;
                     
                 }
                 else
                 {
-                    tailCain = index[j].tailChain.ToList().GetRange(0, index[j].tailLength);
+                    nextTail = j;
+                    tailCain = new List<int>();
                 }
             }
             else
@@ -124,6 +132,7 @@ namespace YarQual2019I
 
                 tailLength = inCycle ? 0 : tailLength + 1;
                 ind.tailLength = tailLength;
+                ind.nextTail = nextTail;
 
                 if (cyclePosition >= 0)
                 {
@@ -135,7 +144,7 @@ namespace YarQual2019I
                 else
                 {
                     tailCain.Add(j);
-                    ind.tailChain = tailCain.ToArray();
+                    ind.tailChain = tailCain;
                 }
 
 
@@ -155,19 +164,29 @@ namespace YarQual2019I
 
             calcIndexes(ind, G, station);
 
-            if (l >= ind[station].tailLength)
+            bool tailFinished = false;
+            do
             {
-                l -= ind[station].tailLength;
-                station = ind[station].cycleStart;
+                if (l < ind[station].tailLength)
+                {
+                    return ind[station].tailChain[ind[station].tailLength - (int)l - 1];
+                }
 
-                l = (l + ind[station].cyclePosition) % ind[station].cycleLength;
-                station = ind[station].cycleChain[l];
-            }
-            else
-            {
-                l = ind[station].tailLength - l - 1;
-                station = ind[station].tailChain[l];
-            }
+                l -= ind[station].tailLength;
+                if ( ind[station].nextTail >=0)
+                {
+                    station = ind[station].nextTail;
+                }
+                else
+                {
+                    tailFinished = true;
+                }
+
+            } while (!tailFinished);
+
+            station = ind[station].cycleStart;
+            l = (l + ind[station].cyclePosition) % ind[station].cycleLength;
+            station = ind[station].cycleChain[l];
 
             return station;
         }
