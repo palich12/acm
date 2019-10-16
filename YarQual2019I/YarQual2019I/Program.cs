@@ -147,12 +147,8 @@ namespace YarQual2019I
 
             calcIndexes(ind, G, station);
 
-            while (true)
+            while (l > 0)
             {
-                if (l == 0)
-                {
-                    return station;
-                }
 
                 if(ind[station].nextTail != -1 &&  l >= ind[station].tailFullLen)
                 {
@@ -174,7 +170,7 @@ namespace YarQual2019I
                 station = ind[station].nextTail;
             }
 
-            throw new Exception();
+            return station;
         }
 
     }
