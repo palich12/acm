@@ -12,6 +12,23 @@ namespace YarQual2019I
         public int cycleStart = -1;
         public int tailFullLen = -1;
     }
+    
+    class request : IComparable
+    {
+        public double key;
+        public int index;
+
+        public int x;
+        public long a;
+        public long b;
+        public bool c;
+
+
+        public int CompareTo(object obj)
+        {
+            return this.key.CompareTo(((request)obj).key);
+        }
+    }
 
     class Program
     {
@@ -29,33 +46,59 @@ namespace YarQual2019I
             var indexR = new index[N];
             index[] ind;
 
+            var rand = new Random();
+            var requests = new request[Q];
             for ( int i = 0; i < Q; i++)
             {
                 var req = Console.ReadLine().Split(new char[] { ' ' }).Select(Int64.Parse).ToArray<Int64>();
 
-                int station = (int)(req[0] - 1);
-                bool coin = req[3] == 0;
-                Int64 l = coin ? req[1] : req[2];
+                var r = new request()
+                {
+                    key = rand.NextDouble(),
+                    index = i,
+                    x = (int)(req[0] - 1),
+                    a = req[1],
+                    b = req[2],
+                    c = req[3] == 0
+                };
+                requests[i] = r;
+            }
+
+            Array.Sort(requests);
+
+            var answers = new int[Q];
+            for (int i = 0; i < Q; i++)
+            {
+                var req = requests[i];
+
+                int station = req.x;
+                bool coin = req.c;
+                Int64 l = coin ? req.a : req.b;
                 ind = coin ? indexL : indexR;
                 int[] G = coin ? L : R;
-                station = go(station,l, G, ind);
-                
+                station = go(station, l, G, ind);
+
                 coin = !coin;
 
-                l = coin ? req[1] : req[2];
+                l = coin ? req.a : req.b;
                 ind = coin ? indexL : indexR;
                 G = coin ? L : R;
 
                 station = go(station, l, G, ind);
 
-                Console.WriteLine(station+1);
+                answers[requests[i].index] = station + 1;
+            }
+
+            for (int i = 0; i < Q; i++)
+            {
+                Console.WriteLine(answers[i]);
             }
 
             Console.ReadLine();
 
         }
 
-        public static void calcIndexes(index[] index, int[] G, int i )
+        public static void calcIndexes(index[] index, int[] G, int i)
         {
             if (index[i] != null)
             {
@@ -76,15 +119,15 @@ namespace YarQual2019I
             int tailPosition = 0;
             int nextTail = i;
             List<int> tailChain = null;
-            
+
             index ind = null;
 
             //build cycle
             if (arr[i] != -1)
             {
-                
+
                 tailPosition = l - arr[i] - 1;
-                tailChain = new int[tailPosition+1].ToList();
+                tailChain = new int[tailPosition + 1].ToList();
                 while (tailPosition >= 0)
                 {
                     i = stack.Pop();
@@ -94,7 +137,7 @@ namespace YarQual2019I
                     ind.tailChain = tailChain;
                     ind.nextTail = -1;
                     index[i] = ind;
-                    tailPosition --;
+                    tailPosition--;
                 }
             }
 
@@ -113,7 +156,7 @@ namespace YarQual2019I
             }
 
             //try continue next tail 
-            if ( index[nextTail].nextTail != -1 && index[nextTail].tailChain.Count == index[nextTail].tailPosition + 1)
+            if (index[nextTail].nextTail != -1 && index[nextTail].tailChain.Count == index[nextTail].tailPosition + 1)
             {
                 tailChain = index[nextTail].tailChain;
                 tailPosition = index[nextTail].tailPosition + 1;
@@ -150,7 +193,7 @@ namespace YarQual2019I
             while (l > 0)
             {
 
-                if(ind[station].nextTail != -1 &&  l >= ind[station].tailFullLen)
+                if (ind[station].nextTail != -1 && l >= ind[station].tailFullLen)
                 {
                     l -= ind[station].tailFullLen;
                     station = ind[station].cycleStart;
