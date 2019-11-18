@@ -18,12 +18,16 @@ namespace _1326
     class Program
     {
 
-        static Dictionary<int, int> dic = new Dictionary<int, int>();
-
+        static int[] dic = new int[2000000];
+        static Offer[] alloffers = null;
 
 
         static void Main(string[] args)
         {
+            for(int i=0; i < dic.Length; i++)
+            {
+                dic[i] = -1;
+            }
 
 
             var offers = new List<Offer>();
@@ -62,11 +66,12 @@ namespace _1326
             }
 
             offers.Sort();
-            Console.WriteLine(req(key, offers));
+            alloffers = offers.ToArray();
+            Console.WriteLine(req(key));
             Console.ReadKey();
         }
 
-        static int req(int key, List<Offer> offers)
+        static int req(int key)
         {
             if (key == 0)
             {
@@ -74,22 +79,14 @@ namespace _1326
             }
 
 
-            if (dic.ContainsKey(key))
+            if (dic[key]!=-1)
             {
                 return dic[key];
             }
 
 
-            var newoffers = new List<Offer>();
-            foreach (var offer in offers)
-            {
-                if ((key & ~offer.key) == key)
-                    continue;
-                newoffers.Add(offer);
-            }
-
             var result = -1;
-            foreach (var offer in newoffers)
+            foreach (var offer in alloffers)
             {
 
                 if (result != -1 && result <= offer.price)
@@ -98,7 +95,11 @@ namespace _1326
                 }
 
                 var newkey = key & ~offer.key;
-                var v = req(newkey, newoffers) + offer.price;
+                if (newkey == key)
+                {
+                    continue;
+                }
+                var v = req(newkey) + offer.price;
                 if (result == -1 || result > v)
                 {
                     result = v;
