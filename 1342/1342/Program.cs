@@ -9,19 +9,19 @@ namespace _1342
     class titem
     {
         public double price = 0;
-        public List<int> factorys = new List<int>();
+        public int count = 0;
+        public List<factory> factorys = new List<factory>();
     }
 
     class factory
     {
-        public int Count;
+        public int count;
         public double first;
         public double last;
     }
 
     class Program
     {
-        public static titem[,] table;
         public static factory[] factorys;
 
         static void Main(string[] args)
@@ -31,12 +31,12 @@ namespace _1342
             var line = Console.ReadLine().Split().Select( i => Int32.Parse(i) ).ToArray();
             int N = line[0], M = line[1];
             factorys = new factory[N];
-            table = new titem[N, M + 1];
+            
             for( int i = 0; i < N; i++)
             {
                 line = Console.ReadLine().Split().Select(j => Int32.Parse(j)).ToArray();
                 var f = new factory();
-                f.Count = line[0];
+                f.count = line[0];
                 f.first = line[1];
                 f.last = line[2];
                 factorys[i] = f;
@@ -47,8 +47,8 @@ namespace _1342
             int count = 0;
             foreach( var f in factorys)
             {
-                count += f.Count;
-                result += ((f.first + f.last) * f.Count) * 0.5;
+                count += f.count;
+                result += ((f.first + f.last) * f.count) * 0.5;
             }
             if(count < M)
             {
@@ -59,63 +59,47 @@ namespace _1342
             }
 
             //--------------
-            table[0, 0] = new titem();
-            if ( factorys[0].Count <= M)
-            {
-                var item = new titem();
-                item.price = ((factorys[0].first + factorys[0].last) * factorys[0].Count) * 0.5;
-                item.factorys.Add(0);
-                table[0, factorys[0].Count] = item;
-            }
-            for(int i = 1; i < N; i++)
-            {
-                for(int j = 0; j <= M; j++)
-                {
-                    if( table[i-1,j] != null)
-                    {
-                        table[i, j] = table[i - 1, j];
-                    }
-                }
-
-                double val = ((factorys[i].first + factorys[i].last) * factorys[i].Count) * 0.5;
-                for (int j = 0; j <= M; j++)
-                {
-                    var newindex = j + factorys[i].Count;
-                    if (
-                        table[i, j] != null &&
-                        newindex <= M)
-                    {
-                        if( table[i, newindex] == null || val + table[i, j].price < table[i, newindex].price)
-                        {
-                            var item = new titem();
-                            item.price = val + table[i, j].price;
-                            item.factorys = table[i, j].factorys.ToList();
-                            item.factorys.Add(i);
-                            table[i, newindex] = item;
-                        }
-                        
-                    }
-                }
-            }
-
+            var items = new List<titem>();
+            items.Add( new titem());
             result = double.MaxValue;
-            if(table[N-1,M] != null)
+            foreach (var factory in factorys)
             {
-                result = table[N - 1, M].price;
+                
+                double price = ((factory.first + factory.last) * factory.count) * 0.5;
+                var newitems = new List<titem>();
+                foreach ( var item in items )
+                {
+                    if (factory.count + item.count < M)
+                    {
+                        var newitem = new titem()
+                        {
+                            count = factory.count + item.count,
+                            price = price + item.price,
+                            factorys = item.factorys.ToList()
+                        };
+                        newitem.factorys.Add(factory);
+                        newitems.Add(newitem);
+                    }
+                }
+                items.AddRange(newitems);
             }
 
-            for(int i = 0; i < N; i++)
+            foreach(var factory in factorys)
             {
-                for(int j = 0; j <= M; j++)
+                foreach (var item in items)
                 {
-                    if (table[N - 1, j] != null &&
-                        factorys[i].Count >= M - j &&
-                        !table[N-1,j].factorys.Contains(i))
+                    if ( factory.count >= M - item.count &&
+                         !item.factorys.Contains(factory))
                     {
-                        double val = (factorys[i].first + factorys[i].last) * 0.5 * (M - j) + table[N - 1, j].price;
-                        if(result > val)
+                        double d = 0;
+                        if( factory.count > 1)
                         {
-                            result = val;
+                            d = (factory.last - factory.first) / (factory.count - 1);
+                        }
+                        double price = (2*factory.first + d*(M - item.count - 1))* (M - item.count)*0.5 + item.price;
+                        if(result > price)
+                        {
+                            result = price;
                         }
                     }
                 }
