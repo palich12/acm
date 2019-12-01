@@ -8,7 +8,7 @@ namespace _1342
 
     class titem
     {
-        public double price = 0;
+        public double cost = 0;
         public int count = 0;
         public List<factory> factorys = new List<factory>();
     }
@@ -65,7 +65,7 @@ namespace _1342
             foreach (var factory in factorys)
             {
                 
-                double price = ((factory.first + factory.last) * factory.count) * 0.5;
+                double cost = ((factory.first + factory.last) * factory.count) * 0.5;
                 var newitems = new List<titem>();
                 foreach ( var item in items )
                 {
@@ -74,7 +74,7 @@ namespace _1342
                         var newitem = new titem()
                         {
                             count = factory.count + item.count,
-                            price = price + item.price,
+                            cost = cost + item.cost,
                             factorys = item.factorys.ToList()
                         };
                         newitem.factorys.Add(factory);
@@ -86,20 +86,21 @@ namespace _1342
 
             foreach(var factory in factorys)
             {
+                double d = 0;
+                if (factory.count > 1)
+                {
+                    d = (factory.last - factory.first) / (factory.count - 1.0);
+                }
+
                 foreach (var item in items)
                 {
                     if ( factory.count >= M - item.count &&
                          !item.factorys.Contains(factory))
                     {
-                        double d = 0;
-                        if( factory.count > 1)
+                        double cost = (2.0*factory.first + d*(M - item.count - 1))* (M - item.count)*0.5 + item.cost;
+                        if(result > cost)
                         {
-                            d = (factory.last - factory.first) / (factory.count - 1);
-                        }
-                        double price = (2*factory.first + d*(M - item.count - 1))* (M - item.count)*0.5 + item.price;
-                        if(result > price)
-                        {
-                            result = price;
+                            result = cost;
                         }
                     }
                 }
