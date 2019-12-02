@@ -6,13 +6,6 @@ using System.Linq;
 namespace _1342
 {
 
-    class titem
-    {
-        public double cost = 0;
-        public int count = 0;
-        public List<factory> factorys = new List<factory>();
-    }
-
     class factory
     {
         public int count;
@@ -23,6 +16,7 @@ namespace _1342
     class Program
     {
         public static factory[] factorys;
+        public static double[,] costs;
 
         static void Main(string[] args)
         {
@@ -59,55 +53,72 @@ namespace _1342
             }
 
             //--------------
-            var items = new List<titem>();
-            items.Add( new titem());
-            result = double.MaxValue;
-            foreach (var factory in factorys)
-            {
-                
-                double cost = ((factory.first + factory.last) * factory.count) * 0.5;
-                var newitems = new List<titem>();
-                foreach ( var item in items )
-                {
-                    if (factory.count + item.count < M)
-                    {
-                        var newitem = new titem()
-                        {
-                            count = factory.count + item.count,
-                            cost = cost + item.cost,
-                            factorys = item.factorys.ToList()
-                        };
-                        newitem.factorys.Add(factory);
-                        newitems.Add(newitem);
-                    }
-                }
-                items.AddRange(newitems);
-            }
-
-            foreach(var factory in factorys)
-            {
-                double d = 0;
-                if (factory.count > 1)
-                {
-                    d = (factory.last - factory.first) / (factory.count - 1.0);
-                }
-
-                foreach (var item in items)
-                {
-                    if ( factory.count >= M - item.count &&
-                         !item.factorys.Contains(factory))
-                    {
-                        double cost = (2.0*factory.first + d*(M - item.count - 1))* (M - item.count)*0.5 + item.cost;
-                        if(result > cost)
-                        {
-                            result = cost;
-                        }
-                    }
-                }
-            }
-
+            costs = new double[M + 1, N];
+            for (int i = 0; i <= M; i++)
+            //{
+            //    for (int j = 0; j < N; j++)
+            //    {
+            //        costs[i, j] = -1;
+            //    }
+            //}
+            result = req(M, N-1);
             Console.WriteLine("Minimum possible cost: " + result.ToString("F2", CultureInfo.InvariantCulture));
             Console.ReadLine();
+        }
+
+        static double req(int count, int factoryid)
+        {
+            if(count == 0)
+            {
+                return 0;
+            }
+            if(factoryid < 0)
+            {
+                return Double.MaxValue;
+            }
+            if( costs[count,factoryid] != 0)
+            {
+                return costs[count, factoryid];
+            }
+
+            double result = Double.MaxValue;
+            for (int i = 0; i <= count; i++)
+            {
+                var d = S(count-i, factoryid);
+                if (d == Double.MaxValue)
+                {
+                    continue;
+                }
+                double prev = req(i,factoryid-1);
+                if (prev == Double.MaxValue)
+                {
+                    continue;
+                }
+
+                if( prev + d < result)
+                {
+                    result = prev + d;
+                }
+            }
+
+            costs[count, factoryid] = result;
+            return result;
+        }
+
+        static double S(int count, int factoryid)
+        {
+            
+            if (factorys[factoryid].count < count)
+            {
+                return Double.MaxValue;
+            }
+
+            double d = 0;
+            if (factorys[factoryid].count > 1)
+            {
+                d = (factorys[factoryid].last - factorys[factoryid].first) / (factorys[factoryid].count - 1.0);
+            }
+            return (2.0 * factorys[factoryid].first + d * (count - 1)) * count * 0.5;
         }
     }
 }
