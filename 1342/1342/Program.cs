@@ -11,6 +11,7 @@ namespace _1342
         public int count;
         public double first;
         public double last;
+        public int allcount;
     }
 
     class Program
@@ -25,14 +26,17 @@ namespace _1342
             var line = Console.ReadLine().Split().Select( i => Int32.Parse(i) ).ToArray();
             int N = line[0], M = line[1];
             factorys = new factory[N];
-            
-            for( int i = 0; i < N; i++)
+
+            int allcount = 0;
+            for ( int i = 0; i < N; i++)
             {
                 line = Console.ReadLine().Split().Select(j => Int32.Parse(j)).ToArray();
                 var f = new factory();
                 f.count = line[0];
                 f.first = line[1];
                 f.last = line[2];
+                allcount += f.count;
+                f.allcount = allcount;
                 factorys[i] = f;
             }
 
@@ -54,13 +58,6 @@ namespace _1342
 
             //--------------
             costs = new double[M + 1, N];
-            for (int i = 0; i <= M; i++)
-            //{
-            //    for (int j = 0; j < N; j++)
-            //    {
-            //        costs[i, j] = -1;
-            //    }
-            //}
             result = req(M, N-1);
             Console.WriteLine("Minimum possible cost: " + result.ToString("F2", CultureInfo.InvariantCulture));
             Console.ReadLine();
@@ -80,16 +77,23 @@ namespace _1342
             {
                 return costs[count, factoryid];
             }
+            if ( factoryid == 0 )
+            {
+                costs[count, 0] = S(count, 0);
+                return costs[count, 0];
+            }
 
             double result = Double.MaxValue;
-            for (int i = 0; i <= count; i++)
+            int min = Math.Max(0,count - factorys[factoryid - 1].allcount);
+            int max = Math.Min(count, factorys[factoryid].count);
+            for (int i = 0; i <= max; i++)
             {
-                var d = S(count-i, factoryid);
+                var d = S(i, factoryid);
                 if (d == Double.MaxValue)
                 {
                     continue;
                 }
-                double prev = req(i,factoryid-1);
+                double prev = req(count-i,factoryid-1);
                 if (prev == Double.MaxValue)
                 {
                     continue;
