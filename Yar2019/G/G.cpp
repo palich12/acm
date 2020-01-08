@@ -2,18 +2,26 @@
 #include <vector>
 #include <bitset>
 
-int N = 0;
-int K = 0;
-int glasses[4] = {0,0,0,0};
-std::bitset<730 * 20 * 20 * 20 * 20> arr = {false};
-
 struct action {
 	int t;
 	int g;
 };
 
+int sort[4][16] = {
+	{0b0001, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000},
+	{0b0001, 0b0010, 0b0011, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000},
+	{0b0001, 0b0010, 0b0100, 0b0011, 0b0110, 0b0101, 0b0111, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000},
+	{0b0001, 0b0010, 0b0100, 0b1000, 0b0011, 0b0110, 0b1010, 0b0101, 0b1100, 0b1001, 0b1110, 0b1101, 0b1011, 0b0111, 0b1111, 0b0000}
+};
+
+int N = 0;
+int K = 0;
+int reqCount = 0;
+int glasses[4] = { 0,0,0,0 };
+std::bitset<730 * 20 * 20 * 20 * 20> arr = { false };
+
 std::vector<action> req(int k, std::vector<int> state) {
-	
+
 	std::vector<action> result;
 	if ((k & 1) == 1) {
 		int index = 0;
@@ -31,12 +39,17 @@ std::vector<action> req(int k, std::vector<int> state) {
 		}
 	}
 
-	for (int i = 1; i < 1 << N; i++ ) {
+	reqCount++;
+	if (reqCount > 80000) {
+		return result;
+	}
+
+	for (int i = 1; i < 1 << N; i++) {
 		std::vector<int> newState;
 		int tStep = 0;
 		for (int j = 0; j < N; j++) {
 			int newStateValue;
-			if ( (i & (1<<j)) > 0 ) {
+			if ((sort[N-1][i-1] & (1 << j)) > 0) {
 				newStateValue = glasses[j] - state[j];
 			}
 			else {
@@ -57,7 +70,7 @@ std::vector<action> req(int k, std::vector<int> state) {
 		nextAction.g = i;
 		nextAction.t = k;
 		if (tStep == k) {
-			
+
 			result.push_back(nextAction);
 			return result;
 		}
@@ -69,7 +82,7 @@ std::vector<action> req(int k, std::vector<int> state) {
 		}
 
 		std::vector<action> rr = req(k - tStep, newState);
-		if ( rr.size() > 0) {
+		if (rr.size() > 0) {
 			rr.push_back(nextAction);
 			return rr;
 		}
@@ -94,11 +107,11 @@ int main()
 
 	std::vector<action> result = req(K, startState);
 	if (result.size() == 0) {
-		printf_s("-1");
+		printf_s("-1\n");
 		return 0;
 	}
 
-	printf_s("%d\r\n", result.size()+1);
+	printf_s("%d\n", result.size() + 1);
 	for (int i = result.size() - 1; i >= 0; i--) {
 		int g = result[i].g;
 		int j = 1;
@@ -114,15 +127,12 @@ int main()
 
 		int t = result[i].t;
 		int l = answer.size();
-		printf_s("%d %d", K-t, l);
+		printf_s("%d %d", K - t, l);
 		for (int j = 0; j < answer.size(); j++) {
 			int n = answer[j];
 			printf_s(" %d", n);
 		}
-		printf_s("\r\n");
+		printf_s("\n");
 	}
-	printf_s("%d %d", K, 0);
+	printf_s("%d %d\n", K, 0);
 }
-
-
-
