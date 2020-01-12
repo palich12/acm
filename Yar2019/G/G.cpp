@@ -1,6 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <bitset>
+#include <map>
+
+#define MAX_K 81
 
 struct action {
 	int t;
@@ -18,19 +21,72 @@ int N = 0;
 int K = 0;
 int reqCount = 0;
 int glasses[4] = { 0,0,0,0 };
-std::bitset<730 * 20 * 20 * 20 * 20> arr = { false };
+std::bitset<MAX_K * 21 * 21 * 21 * 21> arr = { false };
+std::bitset<1450> fastArr = { false };
+std::bitset<1450> fastArr2 = { false };
+
+void fastReq(int k) {
+	if (fastArr[k]) {
+		return;
+	}
+	
+	fastArr[k] = true;
+
+	for (int i = 0; i < N; i++) {
+		int nextT = k + glasses[i];
+		if (nextT <= K) {
+			fastReq(nextT);
+		}
+	}
+}
+
+std::vector<action> getFastSteps(int k, int target) {
+	std::vector<action> empty;
+	if (fastArr2[k]) {
+		return empty;
+	}
+	fastArr2[k] = true;
+	
+	for (int i = 0; i < N; i++) {
+
+		action nextAction;
+		nextAction.g = i;
+		nextAction.t = k;
+		int nextT = k + glasses[i];
+
+		if (nextT == target) {
+			std::vector<action> result;
+			result.push_back(nextAction);
+			return result;
+		}
+
+
+		if (nextT < target) {
+			std::vector<action> result = getFastSteps(nextT, target);
+			if (result.size() > 0) {
+				action nextAction;
+				nextAction.g = i;
+				nextAction.t = k;
+				result.push_back(nextAction);
+				return result;
+			}
+		}
+	}
+
+	return empty;
+}
 
 std::vector<action> req(int k, std::vector<int> state) {
 
 	std::vector<action> result;
-	if ((k & 1) == 1) {
-		int index = 0;
-		int m = 730;
+	if (k < MAX_K) {
+		int index = k;
+		int m = MAX_K;
 		for (int i = 0; i < N; i++) {
 			index += state[i] * m;
-			m *= 20;
+			m *= 21;
 		}
-		index += k >> 1;
+		
 		if (arr[index]) {
 			return result;
 		}
@@ -40,7 +96,7 @@ std::vector<action> req(int k, std::vector<int> state) {
 	}
 
 	reqCount++;
-	if (reqCount > 80000) {
+	if (reqCount > 800000) {
 		return result;
 	}
 
@@ -93,10 +149,9 @@ std::vector<action> req(int k, std::vector<int> state) {
 
 int main()
 {
+	std::vector<int> startState;
 
 	scanf_s("%d", &N);
-
-	std::vector<int> startState;
 	for (int i = 0; i < N; i++) {
 		int g;
 		scanf_s("%d", &g);
@@ -104,35 +159,62 @@ int main()
 		startState.push_back(0);
 	}
 	scanf_s("%d", &K);
+	
+	fastReq(0);
 
-	std::vector<action> result = req(K, startState);
-	if (result.size() == 0) {
-		printf_s("-1\n");
-		return 0;
+	int maxDeep = 15;
+	for (int i = 0; i < N; i++) {
+		maxDeep += glasses[i];
 	}
+	
 
-	printf_s("%d\n", result.size() + 1);
-	for (int i = result.size() - 1; i >= 0; i--) {
-		int g = result[i].g;
-		int j = 1;
-		std::vector<int> answer;
-		answer.clear();
-		while (g > 0) {
-			if ((g & 1) > 0) {
-				answer.push_back(j);
+	for (int fastT = 0; fastT < maxDeep && fastT <= K; fastT++) {
+		std::vector<action> result;
+		std::vector<action> fast;
+		if ( fastT == K || fastArr[K-fastT] ) {
+
+			
+			
+			if (fastT > 0) {
+				result = req(fastT, startState);
+				if (result.size() == 0) {
+					continue;
+				}
 			}
-			g = g >> 1;
-			j++;
-		}
 
-		int t = result[i].t;
-		int l = answer.size();
-		printf_s("%d %d", K - t, l);
-		for (int j = 0; j < answer.size(); j++) {
-			int n = answer[j];
-			printf_s(" %d", n);
+			fast = getFastSteps(0, K - fastT);
+
+			printf_s("%d\n", fast.size() + result.size() + 1);
+			
+			for (int i = fast.size()-1; i >= 0; i--) {
+				printf_s("%d 1 %d\n", fast[i].t, fast[i].g+1);
+			}
+
+			for (int i = result.size() - 1; i >= 0; i--) {
+				int g = result[i].g;
+				int j = 1;
+				std::vector<int> answer;
+				answer.clear();
+				while (g > 0) {
+					if ((g & 1) > 0) {
+						answer.push_back(j);
+					}
+					g = g >> 1;
+					j++;
+				}
+				
+				printf_s("%d %d", K - result[i].t, answer.size());
+				for (int j = 0; j < answer.size(); j++) {
+					int n = answer[j];
+					printf_s(" %d", n);
+				}
+				printf_s("\n");
+			}
+			printf_s("%d 0\n", K);
+			return 0;
 		}
-		printf_s("\n");
 	}
-	printf_s("%d %d\n", K, 0);
+
+
+	printf_s("-1\n");
 }
