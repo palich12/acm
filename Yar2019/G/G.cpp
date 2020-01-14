@@ -4,6 +4,7 @@
 #include <map>
 
 #define MAX_K 81
+#define MAX_DEEP_ADD 100
 
 struct action {
 	int t;
@@ -100,7 +101,7 @@ std::vector<action> req(int k, std::vector<int> state) {
 		return result;
 	}
 
-	for (int i = 1; i < 1 << N; i++) {
+	for (int i = 1; i < (1 << N); i++) {
 		std::vector<int> newState;
 		int tStep = 0;
 		for (int j = 0; j < N; j++) {
@@ -131,17 +132,25 @@ std::vector<action> req(int k, std::vector<int> state) {
 			return result;
 		}
 
+		bool stopFlag = true;
 		for (int j = 0; j < N; j++) {
 			if (newState[j] > 0) {
 				newState[j] = newState[j] - tStep;
 			}
+			if (newState[j] > 0) {
+				stopFlag = false;
+			}
+		}
+		if (stopFlag) {
+			continue;
 		}
 
-		std::vector<action> rr = req(k - tStep, newState);
-		if (rr.size() > 0) {
-			rr.push_back(nextAction);
-			return rr;
+		result = req(k - tStep, newState);
+		if (result.size() > 0) {
+			result.push_back(nextAction);
+			return result;
 		}
+
 	}
 
 	return result;
@@ -162,13 +171,18 @@ int main()
 	
 	fastReq(0);
 
-	int maxDeep = 15;
+	int maxDeep = MAX_DEEP_ADD;
 	for (int i = 0; i < N; i++) {
 		maxDeep += glasses[i];
 	}
 	
 
 	for (int fastT = 0; fastT < maxDeep && fastT <= K; fastT++) {
+		
+		if (N == 1 && !fastArr[K - fastT]) {
+			break;
+		}
+		
 		std::vector<action> result;
 		std::vector<action> fast;
 		if ( fastT == K || fastArr[K-fastT] ) {
