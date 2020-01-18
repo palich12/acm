@@ -2,15 +2,24 @@
 #include <vector>
 #include <bitset>
 #include <map>
+#include <queue>
 
-#define MAX_K 81
-#define MAX_DEEP_ADD 100
+#define MAX_STEP_LENGHT 900
+#define MAX_RECURSION_CALL 100000
 
-struct action {
-	int t;
-	int g;
+//one action about reverse hourglasses
+struct Action {
+	int time;
+	int glassMap;
 };
 
+//combination of actions that open posibility to count time of some lenght 
+struct Step {
+	int length;
+	std::vector<Action> actions;
+};
+
+//specific order of selection reverse combinations of hourglasses for reverse simple combination first
 int sort[4][16] = {
 	{0b0001, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000},
 	{0b0001, 0b0010, 0b0011, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000, 0b0000},
@@ -20,93 +29,55 @@ int sort[4][16] = {
 
 int N = 0;
 int K = 0;
-int reqCount = 0;
 int glasses[4] = { 0,0,0,0 };
-std::bitset<MAX_K * 21 * 21 * 21 * 21> arr = { false };
-std::bitset<1450> fastArr = { false };
-std::bitset<1450> fastArr2 = { false };
+std::bitset<MAX_STEP_LENGHT * 21 * 21 * 21 * 21> visitedPoints = { false };
+std::vector<Step> timeLine (1450);
+int recursionCount = 0;
 
-void fastReq(int k) {
-	if (fastArr[k]) {
-		return;
-	}
-	
-	fastArr[k] = true;
-
-	for (int i = 0; i < N; i++) {
-		int nextT = k + glasses[i];
-		if (nextT <= K) {
-			fastReq(nextT);
-		}
-	}
-}
-
-std::vector<action> getFastSteps(int k, int target) {
-	std::vector<action> empty;
-	if (fastArr2[k]) {
-		return empty;
-	}
-	fastArr2[k] = true;
-	
-	for (int i = 0; i < N; i++) {
-
-		action nextAction;
-		nextAction.g = i;
-		nextAction.t = k;
-		int nextT = k + glasses[i];
-
-		if (nextT == target) {
-			std::vector<action> result;
-			result.push_back(nextAction);
-			return result;
-		}
-
-
-		if (nextT < target) {
-			std::vector<action> result = getFastSteps(nextT, target);
-			if (result.size() > 0) {
-				action nextAction;
-				nextAction.g = i;
-				nextAction.t = k;
-				result.push_back(nextAction);
-				return result;
+//find new avalible time points by using new finding step
+bool useNewStep(Step step) {
+	for (int i = 0; i < K; i++) {
+		int newIndex = i + step.length;
+		if ((timeLine[i].length > 0 || i == 0)
+			&& newIndex <= K
+			&& timeLine[newIndex].length == 0) {
+			timeLine[newIndex] = step;
+			if (newIndex == K) {
+				return true;
 			}
 		}
 	}
-
-	return empty;
+	return false;
 }
 
-std::vector<action> req(int k, std::vector<int> state) {
+//find all avilable combination of actions while we have time for it ;)
+bool findPosibleSteps(int time, std::vector<int> state, std::vector<Action> actions) {
 
-	std::vector<action> result;
-	if (k < MAX_K) {
-		int index = k;
-		int m = MAX_K;
-		for (int i = 0; i < N; i++) {
-			index += state[i] * m;
-			m *= 21;
-		}
-		
-		if (arr[index]) {
-			return result;
-		}
-		else {
-			arr[index] = true;
-		}
+	if (time >= MAX_STEP_LENGHT || time > K || recursionCount > MAX_RECURSION_CALL) {
+		return false;
+	}
+	recursionCount++;
+
+	int index = time;
+	int m = MAX_STEP_LENGHT;
+	for (int i = 0; i < N; i++) {
+		index += state[i] * m;
+		m *= 21;
 	}
 
-	reqCount++;
-	if (reqCount > 800000) {
-		return result;
+	if (visitedPoints[index]) {
+		return false;
 	}
+	visitedPoints[index] = true;
 
-	for (int i = 1; i < (1 << N); i++) {
+	//generate all posible combination of action
+	for (int i = 0; i < (1 << N)-1; i++) {
 		std::vector<int> newState;
-		int tStep = 0;
+		int timeToNextAction = 0;
+		//generate new state after action
 		for (int j = 0; j < N; j++) {
 			int newStateValue;
-			if ((sort[N-1][i-1] & (1 << j)) > 0) {
+			if ((sort[N-1][i] & (1 << j)) > 0) {
 				newStateValue = glasses[j] - state[j];
 			}
 			else {
@@ -114,51 +85,55 @@ std::vector<action> req(int k, std::vector<int> state) {
 			}
 			newState.push_back(newStateValue);
 
-			if (newStateValue > 0 && newStateValue < tStep || tStep == 0) {
-				tStep = newStateValue;
+			if (newStateValue > 0 && newStateValue < timeToNextAction || timeToNextAction == 0) {
+				timeToNextAction = newStateValue;
 			}
 		}
 
-		if (tStep == 0 || tStep > k) {
+		if (timeToNextAction == 0) {
 			continue;
 		}
 
-		action nextAction;
-		nextAction.g = i;
-		nextAction.t = k;
-		if (tStep == k) {
+		//create next action
+		Action nextAction;
+		nextAction.glassMap = sort[N - 1][i];
+		nextAction.time = time;
+		std::vector<Action> nextActions = actions;
+		nextActions.push_back(nextAction);
+		int nextTime = time + timeToNextAction;
 
-			result.push_back(nextAction);
-			return result;
-		}
-
+		//define state after action
 		bool stopFlag = true;
 		for (int j = 0; j < N; j++) {
 			if (newState[j] > 0) {
-				newState[j] = newState[j] - tStep;
+				newState[j] = newState[j] - timeToNextAction;
 			}
 			if (newState[j] > 0) {
 				stopFlag = false;
 			}
 		}
 		if (stopFlag) {
+			Step step;
+			step.actions = nextActions;
+			step.length = nextTime;
+			if (useNewStep(step)) {
+				return true;
+			}
 			continue;
 		}
 
-		result = req(k - tStep, newState);
-		if (result.size() > 0) {
-			result.push_back(nextAction);
-			return result;
+		if (findPosibleSteps(nextTime, newState, nextActions)) {
+			return true;
 		}
-
 	}
 
-	return result;
+	return false;
 }
 
 int main()
 {
 	std::vector<int> startState;
+	std::vector<Action> startActions;
 
 	scanf_s("%d", &N);
 	for (int i = 0; i < N; i++) {
@@ -168,67 +143,48 @@ int main()
 		startState.push_back(0);
 	}
 	scanf_s("%d", &K);
-	
-	fastReq(0);
 
-	int maxDeep = MAX_DEEP_ADD;
-	for (int i = 0; i < N; i++) {
-		maxDeep += glasses[i];
-	}
-	
-
-	for (int fastT = 0; fastT < maxDeep && fastT <= K; fastT++) {
-		
-		if (N == 1 && !fastArr[K - fastT]) {
-			break;
-		}
-		
-		std::vector<action> result;
-		std::vector<action> fast;
-		if ( fastT == K || fastArr[K-fastT] ) {
-
-			
-			
-			if (fastT > 0) {
-				result = req(fastT, startState);
-				if (result.size() == 0) {
-					continue;
-				}
-			}
-
-			fast = getFastSteps(0, K - fastT);
-
-			printf_s("%d\n", fast.size() + result.size() + 1);
-			
-			for (int i = fast.size()-1; i >= 0; i--) {
-				printf_s("%d 1 %d\n", fast[i].t, fast[i].g+1);
-			}
-
-			for (int i = result.size() - 1; i >= 0; i--) {
-				int g = result[i].g;
-				int j = 1;
-				std::vector<int> answer;
-				answer.clear();
-				while (g > 0) {
-					if ((g & 1) > 0) {
-						answer.push_back(j);
-					}
-					g = g >> 1;
-					j++;
-				}
-				
-				printf_s("%d %d", K - result[i].t, answer.size());
-				for (int j = 0; j < answer.size(); j++) {
-					int n = answer[j];
-					printf_s(" %d", n);
-				}
-				printf_s("\n");
-			}
-			printf_s("%d 0\n", K);
-			return 0;
-		}
+	//start reqursion
+	if (!findPosibleSteps(0, startState, startActions)) {
+		printf_s("-1\n");
+		return 0;
 	}
 
+	//generate result
+	std::vector<Action> result;
+	int time = K;
+	while (time > 0) {
+		int actionSize = timeLine[time].actions.size();
+		int nextTime = time - timeLine[time].length;
+		for (int i = actionSize-1; i >=0; i--) {
+			timeLine[time].actions[i].time += nextTime;
+			result.push_back(timeLine[time].actions[i]);
+		}
+		time = nextTime;
+	}
 
-	printf_s("-1\n");
+	printf_s("%d\n", result.size() + 1);
+
+	for (int i = result.size() - 1; i >= 0; i--) {
+		int g = result[i].glassMap;
+		int j = 1;
+		std::vector<int> answer;
+		answer.clear();
+		while (g > 0) {
+			if ((g & 1) > 0) {
+				answer.push_back(j);
+			}
+			g = g >> 1;
+			j++;
+		}
+
+		printf_s("%d %d", result[i].time, answer.size());
+		for (int j = 0; j < answer.size(); j++) {
+			int n = answer[j];
+			printf_s(" %d", n);
+		}
+		printf_s("\n");
+	}
+	printf_s("%d 0\n", K);
+	return 0;
 }
