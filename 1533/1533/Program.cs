@@ -11,7 +11,10 @@ namespace _1533
         static int N;
         static int[][] Matrix;
         static int[] Components;
+        static int[] ComponentSizes;
         static int ComponentsCount = 0;
+
+
 
         static void fillMatrix( int hobbit, List<int> lights )
         {
@@ -41,6 +44,7 @@ namespace _1533
                 return;
             }
             Components[hobbit] = index;
+            ComponentSizes[index]++;
 
             for ( int i = 0; i < N; i++ )
             {
@@ -51,12 +55,70 @@ namespace _1533
             }
         }
 
+        static bool checkClique( int[] hobbits )
+        {
+            for ( int i = 0; i < hobbits.Length - 1; i ++ )
+            {
+                for ( int j = i + 1; j < hobbits.Length; j++ )
+                {
+                    if ( Matrix[hobbits[i]][hobbits[j]] > 0 )
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        static int[] checkAllCliqueOfSize( int component, int start, int size, int heapSize, List<int> prevList)
+        {
+
+            if (size == 0)
+            {
+                var result = prevList.ToArray();
+                if( checkClique(result))
+                {
+                    return result;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            if ( start >= N || heapSize == 0)
+            {
+                return null;
+            }
+
+            int newHeapSize = heapSize;
+            for ( int i = start; i < N && newHeapSize >= size; i++ )
+            {
+
+                if ( Components[i] == component )
+                {
+                    newHeapSize--;
+                    var newPrewList = prevList.ToList();
+                    newPrewList.Add(i);
+                    var result = checkAllCliqueOfSize(component, i + 1, size - 1, newHeapSize, newPrewList);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         static void Main(string[] args)
         {
             N = Int32.Parse(Console.ReadLine());
             Matrix = new int[N][];
             Components = new int[N];
-            for( int i = 0; i < N; i++)
+            ComponentSizes = new int[N+1];
+            for ( int i = 0; i < N; i++)
             {
                 Matrix[i] = Console.ReadLine().Split().Select(x => Int32.Parse(x)).ToArray();
             }
@@ -102,56 +164,29 @@ namespace _1533
                 }
             }
 
-            //find max zeros in components
+            //find max clique in components
             var result = new List<int>();
             for ( int compId = 1; compId <= ComponentsCount; compId++ )
             {
-                int max = 0;
-                int maxid = -1;
-                for (int i = 0; i < N; i++)
+                int[] clique = null;
+                for ( int j = ComponentSizes[compId]; j > 0; j--)
                 {
-
-                    if(Components[i] != compId)
+                    var newClique = checkAllCliqueOfSize(compId, 0, j, ComponentSizes[compId], new List<int>());
+                    if( newClique != null)
                     {
-                        continue;
-                    }
-
-                    int count = 0;
-                    for (int j = 0; j < N; j++)
-                    {
-                        if (Components[j] != compId)
-                        {
-                            continue;
-                        }
-
-                        if (Matrix[i][j] == 0)
-                        {
-                            count++;
-                        }
-
-                        if (count > max)
-                        {
-                            max = count;
-                            maxid = i;
-                        }
+                        clique = newClique;
+                        break;
                     }
                 }
 
-                //add max zeros to result 
-                for (int i = 0; i < N; i++)
-                {
-                    if (Matrix[maxid][i] == 0 && Components[i] == compId)
-                    {
-                        result.Add(i);
-                    }
-                }
+                result.AddRange(clique);
             }
 
             //write result
             Console.WriteLine(result.Count);
             Console.WriteLine(string.Join(" ", result.Select(x => (x+1).ToString()).ToArray()));
 
-            //Console.ReadLine();
+            Console.ReadLine();
         }
     }
 }
