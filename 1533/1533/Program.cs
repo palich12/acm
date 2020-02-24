@@ -13,8 +13,8 @@ namespace _1533
         static int[] Components;
         static int[] ComponentSizes;
         static int ComponentsCount = 0;
-
-
+        static int callCount = 0;
+        static int callCountLimit = 4500000;
 
         static void fillMatrix( int hobbit, List<int> lights )
         {
@@ -73,6 +73,13 @@ namespace _1533
 
         static int[] checkAllCliqueOfSize( int component, int start, int size, int heapSize, List<int> prevList)
         {
+
+            if (callCount > callCountLimit)
+            {
+                return null;
+            }
+            callCount++;
+
 
             if (size == 0)
             {
@@ -165,24 +172,54 @@ namespace _1533
             }
 
             //find max clique in components
-            var result = new List<int>();
-            for ( int compId = 1; compId <= ComponentsCount; compId++ )
+            var results = new int[ComponentsCount][];
+            var resultsComplite = new bool[ComponentsCount];
+
+            int I = 1;
+            do
             {
-                int[] clique = null;
-                for ( int j = ComponentSizes[compId]; j > 0; j--)
+                for (int compId = 1; compId <= ComponentsCount; compId++)
                 {
-                    var newClique = checkAllCliqueOfSize(compId, 0, j, ComponentSizes[compId], new List<int>());
-                    if( newClique != null)
+                    if (!resultsComplite[compId - 1] && I <= ComponentSizes[compId] - I + 1)
                     {
-                        clique = newClique;
-                        break;
+                        var newClique = checkAllCliqueOfSize(compId, 0, I, ComponentSizes[compId], new List<int>());
+                        if (newClique != null)
+                        {
+                            results[compId - 1] = newClique;
+
+                        }
+
+                        if (ComponentSizes[compId] - I + 1 > I)
+                        {
+                            newClique = checkAllCliqueOfSize(compId, 0, ComponentSizes[compId] - I + 1, ComponentSizes[compId], new List<int>());
+                            if (newClique != null)
+                            {
+                                results[compId - 1] = newClique;
+                                resultsComplite[compId - 1] = true;
+                            }
+                        }
+                        else
+                        {
+                            resultsComplite[compId - 1] = true;
+                        }
+                        
                     }
+                    else
+                    {
+                        resultsComplite[compId - 1] = true;
+                    }
+
                 }
 
-                result.AddRange(clique);
-            }
+                I++;
+            } while ( resultsComplite.Any( rc => !rc) && callCount < callCountLimit);
 
             //write result
+            var result = new List<int>();
+            foreach (var r in  results)
+            {
+                result.AddRange(r);
+            }
             Console.WriteLine(result.Count);
             Console.WriteLine(string.Join(" ", result.Select(x => (x+1).ToString()).ToArray()));
 
