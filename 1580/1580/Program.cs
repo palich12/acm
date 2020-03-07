@@ -35,7 +35,11 @@ namespace _1580
             {
                 if(Matrix[index,i] != EMPTY)
                 {
-                    if( !Students[i].isFormula)
+                    if ( Students[i].isValue )
+                    {
+                        return true;
+                    }
+                    else if( !Students[i].isFormula)
                     {
                         Students[i].isFormula = true;
                         Students[i].freeCof = Matrix[index, i] - Students[index].freeCof;
@@ -110,6 +114,7 @@ namespace _1580
             {
                 var line = Console.ReadLine().Split().Select(x => Int32.Parse(x)).ToArray();
                 Matrix[line[0]-1, line[1]-1] = line[2];
+                Matrix[line[1] - 1, line[0] - 1] = line[2];
             }
 
             for (int i = 0; i < N; i++)
