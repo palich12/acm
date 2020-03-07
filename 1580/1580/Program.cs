@@ -7,13 +7,20 @@ using System.Threading.Tasks;
 
 namespace _1580
 {
-    public struct student
+    public class Student
     {
-        public bool isFormula;
-        public bool isValue;
-        public Int64 freeCof;
-        public Int64 xCof;
-        public double value;
+        public int index = 0;
+        public bool isFormula = false;
+        public bool isValue = false;
+        public double freeCof = 0;
+        public double xCof = 0;
+        public double value = 0;
+    }
+
+    public class Pair 
+    {
+        public int index = 0;
+        public double value = 0;
     }
 
 
@@ -29,58 +36,35 @@ namespace _1580
 
     class Program
     {
-        static int EMPTY = -100000;
         static double sigma = 0.00000001;
         static int N, M;
-        static int[,] Matrix;
-        static student[] Students;
+        static Pair[][] Matrix;
+        static Student[] Students;
+        static double? X = null;
 
-        static void calcFormula(int index)
+        static void calcFormula(Student student)
         {
-            for (int i = 0; i < N; i++)
+            foreach ( var pair in Matrix[student.index] )
             {
-                if (Matrix[index, i] != EMPTY)
+                var nextStudent = Students[pair.index];
+                if (!nextStudent.isFormula)
                 {
-                    if (!Students[i].isFormula)
-                    {
-                        Students[i].isFormula = true;
-                        Students[i].freeCof = Matrix[index, i] - Students[index].freeCof;
-                        Students[i].xCof = -1 * Students[index].xCof;
+                    nextStudent.isFormula = true;
+                    nextStudent.freeCof = pair.value - student.freeCof;
+                    nextStudent.xCof = -1.0 * student.xCof;
 
-                        calcFormula(i);
-                    }
-                    else
-                    {
-                        if (Students[index].xCof == Students[i].xCof)
-                        {
-                            Students[i].isValue = true;
-                            Students[i].value = ((double)((Int64)Matrix[index, i] - Students[index].freeCof - Students[i].freeCof)) * 0.5;
-                            calcValue(i);
-                            throw new SuccessException();
-                        }
-                        else if (Math.Abs((double)Matrix[index, i] - Students[index].freeCof - Students[i].freeCof) > sigma)
-                        {
-                            throw new ErrorException();
-                        }
-                    }
+                    calcFormula(nextStudent);
                 }
-            }
-        }
-
-        static void calcValue(int index)
-        {
-            for (int i = 0; i < N; i++)
-            {
-                if (Matrix[index, i] != EMPTY)
+                else
                 {
-                    if (!Students[i].isValue)
+                    var k = student.xCof + nextStudent.xCof;
+                    var b = pair.value - student.freeCof - nextStudent.freeCof;
+                    
+                    if (k != 0)
                     {
-                        Students[i].isValue = true;
-                        Students[i].value = Matrix[index, i] - Students[index].value;
-
-                        calcValue(i);
+                        X = b / k;
                     }
-                    else if (Math.Abs((double)Matrix[index, i] - Students[index].value - Students[i].value) > sigma)
+                    else if (Math.Abs(b) > sigma)
                     {
                         throw new ErrorException();
                     }
@@ -88,16 +72,17 @@ namespace _1580
             }
         }
 
-        static void cleanSegment(int index)
+        static void calcValue(Student student)
         {
-
-            Students[index].isFormula = false;
-            Students[index].isValue = false;
-            for (int i = 0; i < N; i++)
+            foreach (var pair in Matrix[student.index])
             {
-                if (Matrix[index, i] != EMPTY && (Students[i].isValue || Students[i].isFormula))
+                var nextStudent = Students[pair.index];
+                if (!nextStudent.isValue)
                 {
-                    cleanSegment(i);
+                    nextStudent.isValue = true;
+                    nextStudent.value = pair.value - student.value;
+
+                    calcValue(nextStudent);
                 }
             }
         }
@@ -107,61 +92,73 @@ namespace _1580
             var NM = Console.ReadLine().Split().Select(x => Int32.Parse(x)).ToArray();
             N = NM[0];
             M = NM[1];
-            Matrix = new int[N, N];
-            Students = new student[N];
-            
-            for (int i = 0; i < N; i++)
+            Matrix = new Pair[N][];
+            Students = new Student[N];
+
+            var preMatrix = new List<Pair>[N];
+            for(int i = 0; i < N; i++)
             {
-                for (int j = 0; j < N; j++)
-                {
-                    Matrix[i, j] = EMPTY;
-                }
+                preMatrix[i] = new List<Pair>();
             }
 
             for (int i = 0; i < M; i++)
             {
                 var line = Console.ReadLine().Split().Select(x => Int32.Parse(x)).ToArray();
-                Matrix[line[0] - 1, line[1] - 1] = line[2];
-                Matrix[line[1] - 1, line[0] - 1] = line[2];
+                preMatrix[line[0] - 1].Add(new Pair() {
+                    index = line[1] - 1,
+                    value = line[2]
+                });
+                preMatrix[line[1] - 1].Add(new Pair()
+                {
+                    index = line[0] - 1,
+                    value = line[2]
+                });
             }
 
             for (int i = 0; i < N; i++)
             {
-                if (!Students[i].isValue)
+                Matrix[i] = preMatrix[i].ToArray();
+                Students[i] = new Student() {
+                    index = i
+                };
+            }
+
+            foreach (var student in Students)
+            {
+                if (!student.isFormula)
                 {
-                    Students[i].isFormula = true;
-                    Students[i].xCof = 1;
-                    Students[i].freeCof = 0;
+                    student.isFormula = true;
+                    student.xCof = 1;
+                    student.freeCof = 0;
 
                     try
                     {
-                        calcFormula(i);
-                        throw new ErrorException();
+                        X = null;
+                        calcFormula(student);
+                        if(X is null)
+                        {
+                            throw new ErrorException();
+                        }
+                        else
+                        {
+                            student.isValue = true;
+                            student.value = X ?? 0;
+                            calcValue(student);
+                        }
                     }
-                    catch( SuccessException)
+                    catch(ErrorException)
                     {
+                        Console.WriteLine("IMPOSSIBLE");
+                        Console.ReadLine();
+                        return;
+                    }
 
-                    }
-                    catch (ErrorException)
-                    {
-                        cleanSegment(i);
-                    }
                 }
             }
 
-            for (int i = 0; i < N; i++)
+            foreach (var student in Students)
             {
-                if (!Students[i].isValue)
-                {
-                    Console.WriteLine("IMPOSSIBLE");
-                    Console.ReadLine();
-                    return;
-                }
-            }
-
-            for (int i = 0; i < N; i++)
-            {
-                Console.WriteLine(Students[i].value.ToString("F", CultureInfo.InvariantCulture));
+                Console.WriteLine(student.value.ToString("F", CultureInfo.InvariantCulture));
             }
 
             Console.ReadLine();
