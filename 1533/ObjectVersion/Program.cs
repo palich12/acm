@@ -4,11 +4,18 @@ using System.Linq;
 
 namespace ObjectVersion
 {
+    class SegmentComparer : IComparer<Hobbit[]>
+    {
+        public int Compare(Hobbit[] x, Hobbit[] y)
+        {
+            return x.Length.CompareTo(y.Length);
+        }
+    }
+
     class Hobbit
     {
         public static List<Hobbit> All = new List<Hobbit>();
-        public static List<List<Hobbit>> Segments = new List<List<Hobbit>>();
-        public static bool[,] friendshipMatrix;
+        public static Hobbit[][] Segments;
 
         public int Id = 0;
         public int SegmentId = 0;
@@ -42,6 +49,9 @@ namespace ObjectVersion
 
     class Program
     {
+
+        static DateTime Timer;
+
         static int N;
 
         static void fillMatrix( Hobbit hobbit, List<Hobbit> lighter)
@@ -84,59 +94,6 @@ namespace ObjectVersion
             }
         }
 
-        static List<Hobbit> findClick( int size, List<Hobbit> segment )
-        {
-            var candidates = new List<Hobbit>();
-            foreach( var hobbit in segment)
-            {
-                if ( hobbit.Friendship.Count >= size - 1)
-                {
-                    candidates.Add(hobbit);
-                }
-            }
-
-            if(candidates.Count < size)
-            {
-                return null;
-            }
-
-            return generareClick(new List<Hobbit>(), candidates, size, 0);
-        }
-
-        static List<Hobbit> generareClick( List<Hobbit> preClick, List<Hobbit> candidates, int freeCount, int startIndex)
-        {
-            if( freeCount == 0)
-            {
-                //check click
-                for ( int i = 0; i < preClick.Count - 1; i++ )
-                {
-                    for (int j = i+1; j < preClick.Count; j++)
-                    {
-                        if ( !Hobbit.friendshipMatrix[preClick[i].Id, preClick[j].Id] )
-                        {
-                            return null;
-                        }
-                    }
-                }
-
-                return preClick;
-            }
-
-            //add next candidate
-            for( int i = startIndex; i <= candidates.Count - freeCount; i ++)
-            {
-                preClick.Add(candidates[i]);
-                var result = generareClick(preClick, candidates, freeCount-1, i+1);
-                if (result != null)
-                {
-                    return result;
-                }
-                preClick.Remove(candidates[i]);
-            }
-
-            return null;
-        }
-
         static Hobbit[] Result = null;
         static void BronKerbosch1(Hobbit[] R, Hobbit[] P, Hobbit[] X)
         {
@@ -149,6 +106,11 @@ namespace ObjectVersion
                 return;
             }
 
+            
+            if ( (DateTime.Now - Timer).TotalMilliseconds > 100 )
+            {
+                throw new Exception();
+            }
 
             var newP = P.ToList();
             var newX = X.ToList();
@@ -172,7 +134,6 @@ namespace ObjectVersion
 
             //read data
             N = Int32.Parse(Console.ReadLine());
-            Hobbit.friendshipMatrix = new bool[N, N];
             for (int i = 0; i < N; i++)
             {
                 new Hobbit(i);
@@ -191,26 +152,28 @@ namespace ObjectVersion
                     }
                 }
             }
+            Timer = DateTime.Now;
 
             //remove chains
-            bool end = true;
-            do
-            {
-                end = true;
-                foreach ( var hobbit in Hobbit.All)
-                {
-                    if (hobbit.Lighter.Count == 1 && hobbit.Lighter[0].Heavier.Count == 1)
-                    {
-                        hobbit.remove();
-                        end = false;
-                        break;
-                    }
-                }
+            //bool end = true;
+            //do
+            //{
+            //    end = true;
+            //    foreach ( var hobbit in Hobbit.All)
+            //    {
+            //        if (hobbit.Lighter.Count == 1 && hobbit.Lighter[0].Heavier.Count == 1)
+            //        {
+            //            hobbit.remove();
+            //            end = false;
+            //            break;
+            //        }
+            //    }
 
-            } while ( !end );
-            
+            //} while ( !end );
+
             //fill matrix and detect segments
             int segmentId = 1;
+            var segments = new List<Hobbit[]>();
             foreach( var hobbit in Hobbit.All)
             {
                 if (hobbit.Lighter.Count == 0)
@@ -221,51 +184,44 @@ namespace ObjectVersion
                 if( hobbit.SegmentId == 0)
                 {
                     var newSegment = new List<Hobbit>();
-                    Hobbit.Segments.Add(newSegment);
                     fillSegment(segmentId, hobbit, newSegment);
+                    segments.Add(newSegment.ToArray());
                     segmentId++;
                 }
             }
+            Hobbit.Segments = segments.ToArray();
+            Array.Sort(Hobbit.Segments, new SegmentComparer());
 
             //create final matrix
             foreach ( var segment in Hobbit.Segments )
             {
-                for(int i = 0; i < segment.Count; i++)
+                for(int i = 0; i < segment.Length; i++)
                 {
-                    for (int j = i+1; j < segment.Count; j++)
+                    for (int j = i+1; j < segment.Length; j++)
                     {
                         if (!segment[i].Heavier.Contains(segment[j]) && !segment[i].Lighter.Contains(segment[j]))
                         {
                             segment[i].Friendship.Add(segment[j]);
                             segment[j].Friendship.Add(segment[i]);
-                            Hobbit.friendshipMatrix[segment[i].Id, segment[j].Id] = true;
-                            Hobbit.friendshipMatrix[segment[j].Id, segment[i].Id] = true;
                         }
                     }
                 }
             }
 
-            //find click
-            //var result = new List<Hobbit>();
-            //foreach (var segment in Hobbit.Segments)
-            //{
-            //    List<Hobbit> click = null;
-            //    for (int i = segment.Count; i > 0; i--)
-            //    {
-            //        click = findClick(i, segment);
-            //        if (click != null)
-            //        {
-            //            result.AddRange(click);
-            //            break;
-            //        }
-            //    }
-            //}
-
             var result = new List<Hobbit>();
             foreach (var segment in Hobbit.Segments)
             {
                 Result = null;
-                BronKerbosch1(new Hobbit[] { }, segment.ToArray(), new Hobbit[] { });
+                try
+                {
+                    BronKerbosch1(new Hobbit[] { }, segment.ToArray(), new Hobbit[] { });
+                }
+                catch (Exception) { }
+                
+                if(Result == null)
+                {
+                    Result = new Hobbit[] {segment[0]};
+                }
                 result.AddRange(Result);
             }
 
