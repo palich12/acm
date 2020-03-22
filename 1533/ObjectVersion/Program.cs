@@ -137,6 +137,36 @@ namespace ObjectVersion
             return null;
         }
 
+        static Hobbit[] Result = null;
+        static void BronKerbosch1(Hobbit[] R, Hobbit[] P, Hobbit[] X)
+        {
+            if( P.Length == 0 && X.Length == 0)
+            {
+                if (Result == null || Result.Length < R.Length)
+                {
+                    Result = R;
+                }
+                return;
+            }
+
+
+            var newP = P.ToList();
+            var newX = X.ToList();
+            foreach( var v in P)
+            {
+                BronKerbosch1(
+                    R.Concat(new Hobbit[] { v }).ToArray(),
+                    newP.Where(p => v.Friendship.Contains(p)).ToArray(),
+                    newX.Where(p => v.Friendship.Contains(p)).ToArray());
+
+                newP.Remove(v);
+                if( !newX.Contains(v))
+                {
+                    newX.Add(v);
+                }
+            }
+        }
+
         static void Main(string[] args)
         {
 
@@ -216,19 +246,27 @@ namespace ObjectVersion
             }
 
             //find click
+            //var result = new List<Hobbit>();
+            //foreach (var segment in Hobbit.Segments)
+            //{
+            //    List<Hobbit> click = null;
+            //    for (int i = segment.Count; i > 0; i--)
+            //    {
+            //        click = findClick(i, segment);
+            //        if (click != null)
+            //        {
+            //            result.AddRange(click);
+            //            break;
+            //        }
+            //    }
+            //}
+
             var result = new List<Hobbit>();
-            foreach(var segment in Hobbit.Segments)
+            foreach (var segment in Hobbit.Segments)
             {
-                List<Hobbit> click = null;
-                for ( int i = segment.Count; i > 0; i -- )
-                {
-                    click = findClick(i, segment);
-                    if( click != null)
-                    {
-                        result.AddRange(click);
-                        break;
-                    }
-                }
+                Result = null;
+                BronKerbosch1(new Hobbit[] { }, segment.ToArray(), new Hobbit[] { });
+                result.AddRange(Result);
             }
 
             //output
